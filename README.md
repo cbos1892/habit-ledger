@@ -9,14 +9,15 @@ Habit Ledger is a private, mobile-friendly habit tracker. See [PRD.md](./PRD.md)
 - Supabase project: `Habit-Ledger`
 - Supabase project reference: `jlxfxysadkbzcfpdjttq`
 - Supabase region: West US (Oregon)
-- Vercel: not connected yet
+- Vercel project: `curtis-s-team/habit-ledger`
+- Production URL: [habitledger.vercel.app](https://habitledger.vercel.app/)
 
 The checked-in Supabase baseline represents a newly provisioned project with no application tables. Habit, schedule, profile, and completion tables will be added in later migrations as their corresponding tasks are implemented.
 
 ## Prerequisites
 
 - Git
-- Node.js 20.9 or newer
+- Node.js 24
 - pnpm 11
 - Supabase CLI
 - A Docker-compatible runtime when running Supabase locally
@@ -56,6 +57,8 @@ The application requires these variables in every runtime environment:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `.env.local`      | Vercel environment setting | Vercel environment setting |
 
 Use `.env.example` only as a safe template. Do not commit `.env.local` or any real privileged credential. If a server-only secret becomes necessary later, configure it only in `.env.local` and the appropriate hosted environment, never with a `NEXT_PUBLIC_` prefix.
+
+Preview and production intentionally use the same hosted Supabase project for the private MVP. The variables are explicitly scoped to both Vercel environments. Introduce separate Supabase projects and environment-specific values before this shared-backend tradeoff is no longer appropriate.
 
 ## Local Supabase workflow
 
@@ -112,10 +115,7 @@ pnpm dev
 Run the project quality checks:
 
 ```sh
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm format:check
+pnpm verify
 pnpm build
 ```
 
@@ -123,6 +123,50 @@ Use `pnpm test:watch` while developing tests and `pnpm format` to apply formatti
 
 Application code lives under `src/`. Routes are defined in `src/app/`; reusable components, data access, and utilities should be added under `src/components/`, `src/data/`, and `src/lib/` as those layers are introduced. Tests live beside the code they cover.
 
+## Vercel deployment workflow
+
+Vercel is connected to the GitHub repository and uses `main` as the production branch. Every other pushed branch or pull request receives a protected preview deployment. A push to `main` creates a production deployment and updates [habitledger.vercel.app](https://habitledger.vercel.app/) after a successful build.
+
+[`vercel.json`](./vercel.json) makes every Vercel deployment run the complete quality suite before the production build:
+
+```sh
+pnpm verify
+pnpm build
+```
+
+The quality suite includes linting, generated route types and TypeScript checks, tests, and formatting validation. A failure in any command fails the Vercel deployment.
+
+### Smoke checks
+
+After a preview or production deployment, verify both the application and its uncached health endpoint:
+
+```sh
+curl --fail --show-error --silent https://habitledger.vercel.app/ > /dev/null
+curl --fail --show-error --silent https://habitledger.vercel.app/api/health
+```
+
+The health endpoint should return HTTP 200 with `{"status":"ok"}`. Protected preview deployments can be checked through the authenticated CLI:
+
+```sh
+vercel curl /api/health --deployment <preview-url> --scope curtis-s-team
+```
+
+### Rollback
+
+List recent production deployments and identify the last known-good deployment URL or ID:
+
+```sh
+vercel list habit-ledger --scope curtis-s-team
+```
+
+Roll the production aliases back to it, then repeat the smoke checks:
+
+```sh
+vercel rollback <deployment-id-or-url> --scope curtis-s-team
+```
+
+After diagnosing the regression, fix it through the normal branch and pull-request workflow. Do not treat a rollback as the permanent source-of-truth change.
+
 ## Deployment status
 
-Supabase and GitHub are connected. Vercel preview and production deployment remain to be configured and verified in the infrastructure task before the project can be considered deployment-ready.
+GitHub, Supabase, and Vercel are connected. Preview and production deployments are operational, and the production application is available at [habitledger.vercel.app](https://habitledger.vercel.app/).
