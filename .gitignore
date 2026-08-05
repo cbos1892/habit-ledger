@@ -1,0 +1,15 @@
+# Dependencies and build output
+node_modules/
+.next/
+coverage/
+
+# Hosting metadata
+.vercel/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store

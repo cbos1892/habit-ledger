@@ -1,0 +1,4 @@
+-- Baseline for the newly provisioned Habit-Ledger Supabase project.
+-- No application-owned tables, functions, triggers, or policies existed when
+-- the project was linked on 2026-08-05. Future schema changes must be added as
+-- ordered migrations rather than created directly in the hosted dashboard.

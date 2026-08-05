@@ -1,0 +1,2 @@
+-- Intentionally empty until the application schema and safe development
+-- fixtures are defined. Never add production or personal data to this file.
