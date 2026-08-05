@@ -16,7 +16,8 @@ The checked-in Supabase baseline represents a newly provisioned project with no 
 ## Prerequisites
 
 - Git
-- Node.js 20 or newer
+- Node.js 20.9 or newer
+- pnpm 11
 - Supabase CLI
 - A Docker-compatible runtime when running Supabase locally
 
@@ -26,11 +27,18 @@ Install the Supabase CLI on macOS:
 brew install supabase/tap/supabase
 ```
 
+Install pnpm if it is not already available:
+
+```sh
+npm install --global pnpm@11.9.0
+```
+
 ## Initial setup
 
 ```sh
 git clone https://github.com/cbos1892/habit-ledger.git
 cd habit-ledger
+pnpm install
 cp .env.example .env.local
 supabase login
 supabase link --project-ref jlxfxysadkbzcfpdjttq
@@ -42,10 +50,10 @@ Get the publishable key from the Supabase dashboard's **Connect** dialog and pla
 
 The application requires these variables in every runtime environment:
 
-| Variable | Local development | Vercel Preview | Vercel Production |
-| --- | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | `.env.local` | Vercel environment setting | Vercel environment setting |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `.env.local` | Vercel environment setting | Vercel environment setting |
+| Variable                               | Local development | Vercel Preview             | Vercel Production          |
+| -------------------------------------- | ----------------- | -------------------------- | -------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | `.env.local`      | Vercel environment setting | Vercel environment setting |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `.env.local`      | Vercel environment setting | Vercel environment setting |
 
 Use `.env.example` only as a safe template. Do not commit `.env.local` or any real privileged credential. If a server-only secret becomes necessary later, configure it only in `.env.local` and the appropriate hosted environment, never with a `NEXT_PUBLIC_` prefix.
 
@@ -92,6 +100,28 @@ supabase db reset
 `supabase db reset` rebuilds only the local database from migrations and seed data. Do not run `supabase db reset --linked` against the hosted project: it is destructive and erases remote data.
 
 The local project link is stored under `supabase/.temp/`. That directory is ignored by Git, so each developer or automation environment must run `supabase link` independently.
+
+## Application development
+
+Start the Next.js development server at [http://localhost:3000](http://localhost:3000):
+
+```sh
+pnpm dev
+```
+
+Run the project quality checks:
+
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm format:check
+pnpm build
+```
+
+Use `pnpm test:watch` while developing tests and `pnpm format` to apply formatting.
+
+Application code lives under `src/`. Routes are defined in `src/app/`; reusable components, data access, and utilities should be added under `src/components/`, `src/data/`, and `src/lib/` as those layers are introduced. Tests live beside the code they cover.
 
 ## Deployment status
 
