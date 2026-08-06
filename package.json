@@ -15,6 +15,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "NODE_ENV=test vitest run",
     "test:watch": "NODE_ENV=test vitest",
+    "test:db": "supabase test db",
     "types:generate": "supabase gen types --linked --lang typescript --schema public > src/types/database.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
