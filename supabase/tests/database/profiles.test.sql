@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(19);
+select plan(20);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select col_is_pk('public', 'profiles', 'id', 'profiles.id is the primary key');
@@ -102,6 +102,13 @@ select results_eq(
   $$update public.profiles set time_zone = 'America/Chicago' where id = '22222222-2222-4222-8222-222222222222' returning id$$,
   $$select null::uuid where false$$,
   'a user cannot update another profile'
+);
+
+select throws_ok(
+  $$delete from public.profiles where id = '22222222-2222-4222-8222-222222222222'$$,
+  '42501',
+  'permission denied for table profiles',
+  'a user cannot delete another profile'
 );
 
 select throws_ok(

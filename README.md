@@ -147,6 +147,8 @@ pnpm build
 ```
 
 Use `pnpm test:watch` while developing tests and `pnpm format` to apply formatting.
+See [docs/security-testing.md](./docs/security-testing.md) for the RLS checklist
+and the two-account deployed authentication smoke test.
 
 Application code lives under `src/`. Routes are defined in `src/app/`; reusable components, data access, and utilities should be added under `src/components/`, `src/data/`, and `src/lib/` as those layers are introduced. Tests live beside the code they cover.
 
