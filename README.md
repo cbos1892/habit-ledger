@@ -47,6 +47,13 @@ supabase link --project-ref jlxfxysadkbzcfpdjttq
 
 Get the publishable key from the Supabase dashboard's **Connect** dialog and place it in `.env.local`. The project URL and publishable key are designed for browser use; database passwords, personal access tokens, secret keys, and legacy service-role keys are privileged and must remain outside Git.
 
+The typed client helpers validate both required public variables before creating a client:
+
+- Use `createBrowserSupabaseClient()` from `src/lib/supabase/client.ts` in Client Components and other browser code.
+- Use `await createServerSupabaseClient()` from `src/lib/supabase/server.ts` in Server Components, Server Actions, and Route Handlers. Create a fresh server client for each request.
+
+Both helpers use the generated `Database` type in `src/types/database.ts`. The browser helper contains only the publishable key; do not add a secret or service-role client to browser-importable modules.
+
 ## Environment variables
 
 The application requires these variables in every runtime environment:
@@ -83,6 +90,14 @@ supabase db reset
 ```
 
 Review every migration before committing it. All application tables, constraints, indexes, functions, triggers, grants, and row-level security policies should be reproducible from the ordered files in `supabase/migrations/`.
+
+Refresh the checked-in TypeScript database types after applying or pulling a schema change:
+
+```sh
+pnpm types:generate
+```
+
+This command reads the linked Supabase project, so run `supabase login` and `supabase link` first. Review the generated diff alongside the migration that caused it.
 
 Preview and deploy pending migrations to the linked project:
 
