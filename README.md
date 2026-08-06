@@ -116,6 +116,11 @@ Run the project quality checks:
 
 ```sh
 pnpm verify
+```
+
+Run the same complete quality gate and production build used by Vercel:
+
+```sh
 pnpm build
 ```
 
@@ -127,10 +132,9 @@ Application code lives under `src/`. Routes are defined in `src/app/`; reusable 
 
 Vercel is connected to the GitHub repository and uses `main` as the production branch. Every other pushed branch or pull request receives a protected preview deployment. A push to `main` creates a production deployment and updates [habitledger.vercel.app](https://habitledger.vercel.app/) after a successful build.
 
-[`vercel.json`](./vercel.json) makes every Vercel deployment run the complete quality suite before the production build:
+The standard `build` script makes every Vercel deployment run the complete quality suite before the production build:
 
 ```sh
-pnpm verify
 pnpm build
 ```
 
