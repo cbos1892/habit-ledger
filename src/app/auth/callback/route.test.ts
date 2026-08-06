@@ -57,4 +57,17 @@ describe("GET /auth/callback", () => {
       "https://app.test/sign-in?error=invalid_or_expired",
     );
   });
+
+  it("returns a Google-specific error when the provider rejects the request", async () => {
+    const response = await GET(
+      new Request(
+        "https://app.test/auth/callback?error=access_denied&error_description=cancelled",
+      ),
+    );
+
+    expect(exchangeCodeForSession).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe(
+      "https://app.test/sign-in?error=oauth_failed",
+    );
+  });
 });

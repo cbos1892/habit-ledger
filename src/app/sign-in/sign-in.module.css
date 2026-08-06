@@ -68,6 +68,46 @@
   gap: var(--space-5);
 }
 
+.googleForm {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.googleButton {
+  width: 100%;
+  gap: var(--space-3);
+}
+
+.googleMark {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.divider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  background: var(--color-border);
+  content: "";
+}
+
 .submit {
   width: 100%;
 }
