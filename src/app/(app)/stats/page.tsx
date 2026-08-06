@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { RoutePlaceholder } from "../../../components/route-placeholder";
 import { getNavigationItem } from "../../../lib/navigation";
+import { requireConfiguredProfile } from "../../../lib/profile";
 
 const route = getNavigationItem("stats");
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   description: route.description,
 };
 
-export default function StatsPage() {
+export default async function StatsPage() {
+  await requireConfiguredProfile();
+
   return (
     <RoutePlaceholder
       eyebrow="Progress, gently"

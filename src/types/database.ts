@@ -19,18 +19,21 @@ export type Database = {
           created_at: string;
           id: string;
           time_zone: string;
+          time_zone_confirmed_at: string | null;
           updated_at: string;
         };
         Insert: {
           created_at?: string;
           id: string;
           time_zone?: string;
+          time_zone_confirmed_at?: string | null;
           updated_at?: string;
         };
         Update: {
           created_at?: string;
           id?: string;
           time_zone?: string;
+          time_zone_confirmed_at?: string | null;
           updated_at?: string;
         };
         Relationships: [];
