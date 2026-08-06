@@ -14,6 +14,85 @@ export type Database = {
   };
   public: {
     Tables: {
+      habit_schedules: {
+        Row: {
+          created_at: string;
+          habit_id: string;
+          id: string;
+          owner_id: string;
+          weekday: number;
+        };
+        Insert: {
+          created_at?: string;
+          habit_id: string;
+          id?: string;
+          owner_id: string;
+          weekday: number;
+        };
+        Update: {
+          created_at?: string;
+          habit_id?: string;
+          id?: string;
+          owner_id?: string;
+          weekday?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "habit_schedules_habit_owner_fk";
+            columns: ["habit_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "habits";
+            referencedColumns: ["id", "owner_id"];
+          },
+        ];
+      };
+      habits: {
+        Row: {
+          archived_at: string | null;
+          color: string;
+          created_at: string;
+          display_order: number;
+          icon: string;
+          id: string;
+          name: string;
+          owner_id: string;
+          start_date: string;
+          updated_at: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          color: string;
+          created_at?: string;
+          display_order: number;
+          icon: string;
+          id?: string;
+          name: string;
+          owner_id: string;
+          start_date: string;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          color?: string;
+          created_at?: string;
+          display_order?: number;
+          icon?: string;
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          start_date?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "habits_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
