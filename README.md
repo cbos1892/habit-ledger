@@ -12,7 +12,7 @@ Habit Ledger is a private, mobile-friendly habit tracker. See [PRD.md](./PRD.md)
 - Vercel project: `curtis-s-team/habit-ledger`
 - Production URL: [habitledger.vercel.app](https://habitledger.vercel.app/)
 
-The checked-in Supabase baseline represents a newly provisioned project with no application tables. Habit, schedule, profile, and completion tables will be added in later migrations as their corresponding tasks are implemented.
+The checked-in Supabase migrations include the user-owned profile foundation. Habit, schedule, and completion tables will be added in later migrations as their corresponding tasks are implemented.
 
 ## Prerequisites
 
@@ -54,6 +54,8 @@ The typed client helpers validate both required public variables before creating
 
 Both helpers use the generated `Database` type in `src/types/database.ts`. The browser helper contains only the publishable key; do not add a secret or service-role client to browser-importable modules.
 
+Each Auth user receives one `profiles` row automatically. Profile reads and time-zone updates are protected by row-level security, and the database accepts only time-zone names recognized by PostgreSQL's IANA time-zone catalog. Application validation should still reject invalid values before submitting them so users receive immediate feedback.
+
 ## Environment variables
 
 The application requires these variables in every runtime environment:
@@ -87,6 +89,7 @@ Create and test a schema change:
 ```sh
 supabase migration new descriptive_change_name
 supabase db reset
+pnpm test:db
 ```
 
 Review every migration before committing it. All application tables, constraints, indexes, functions, triggers, grants, and row-level security policies should be reproducible from the ordered files in `supabase/migrations/`.
