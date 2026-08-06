@@ -11,6 +11,16 @@ function Brand() {
   );
 }
 
+function SignOutForm() {
+  return (
+    <form action="/auth/sign-out" method="post">
+      <button className="sign-out-button" type="submit">
+        Sign out
+      </button>
+    </form>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
@@ -20,10 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <header className="mobile-header">
         <Brand />
-        <span className="privacy-pill">
-          <span className="privacy-dot" aria-hidden="true" />
-          Private
-        </span>
+        <SignOutForm />
       </header>
 
       <aside className="app-navigation-frame">
@@ -31,7 +38,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Brand />
         </div>
         <PrimaryNavigation />
-        <p className="desktop-note">A quiet place for steady progress.</p>
+        <div className="desktop-footer">
+          <p className="desktop-note">A quiet place for steady progress.</p>
+          <SignOutForm />
+        </div>
       </aside>
 
       <main className="app-main" id="main-content" tabIndex={-1}>

@@ -8,8 +8,8 @@ import type { Database } from "@/types/database";
 import { getSupabasePublicEnv } from "./env";
 
 export async function createServerSupabaseClient() {
-  const { url, publishableKey } = getSupabasePublicEnv();
   const cookieStore = await cookies();
+  const { url, publishableKey } = getSupabasePublicEnv();
 
   return createServerClient<Database>(url, publishableKey, {
     cookies: {
