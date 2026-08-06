@@ -54,6 +54,8 @@ The typed client helpers validate both required public variables before creating
 
 Both helpers use the generated `Database` type in `src/types/database.ts`. The browser helper contains only the publishable key; do not add a secret or service-role client to browser-importable modules.
 
+Server-side features should use `getCurrentUser()` or `requireCurrentUser()` from `src/lib/auth/current-user.ts` before reading user-owned data. These helpers validate the identity with Supabase Auth and expose only the stable user ID, keeping authorization decisions and private user objects out of Client Components.
+
 Authentication uses Supabase passwordless email links with PKCE. The production, current branch-preview, localhost, and loopback callback URLs are declared in `supabase/config.toml`; push reviewed Auth configuration changes with `supabase config push`. Requests refresh their SSR session cookies through `src/proxy.ts`; protected application layouts still call `getUser()` on the server before rendering private content.
 
 Each Auth user receives one `profiles` row automatically. Profile reads and time-zone updates are protected by row-level security, and the database accepts only time-zone names recognized by PostgreSQL's IANA time-zone catalog. Application validation should still reject invalid values before submitting them so users receive immediate feedback.
