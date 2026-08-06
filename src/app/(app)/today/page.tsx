@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { RoutePlaceholder } from "../../../components/route-placeholder";
 import { getNavigationItem } from "../../../lib/navigation";
+import { requireConfiguredProfile } from "../../../lib/profile";
 
 const route = getNavigationItem("today");
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   description: route.description,
 };
 
-export default function TodayPage() {
+export default async function TodayPage() {
+  await requireConfiguredProfile();
+
   return (
     <RoutePlaceholder
       eyebrow="Daily check-in"

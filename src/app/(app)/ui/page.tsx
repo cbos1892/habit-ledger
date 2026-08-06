@@ -9,6 +9,7 @@ import {
   TextAreaField,
   TextField,
 } from "../../../components/ui";
+import { requireConfiguredProfile } from "../../../lib/profile";
 import styles from "./showcase.module.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export const metadata: Metadata = {
 
 const habitColors = ["fern", "ocean", "sun", "plum", "rose"] as const;
 
-export default function UiShowcasePage() {
+export default async function UiShowcasePage() {
+  await requireConfiguredProfile();
+
   return (
     <section aria-labelledby="page-title" className={styles.showcase}>
       <div className="page-heading">

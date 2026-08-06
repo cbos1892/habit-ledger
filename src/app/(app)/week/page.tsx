@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { RoutePlaceholder } from "../../../components/route-placeholder";
 import { getNavigationItem } from "../../../lib/navigation";
+import { requireConfiguredProfile } from "../../../lib/profile";
 
 const route = getNavigationItem("week");
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   description: route.description,
 };
 
-export default function WeekPage() {
+export default async function WeekPage() {
+  await requireConfiguredProfile();
+
   return (
     <RoutePlaceholder
       eyebrow="Seven-day view"
