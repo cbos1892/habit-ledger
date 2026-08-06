@@ -1,5 +1,12 @@
 import { redirect } from "next/navigation";
 
-export default function Home() {
-  redirect("/today");
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  redirect(user ? "/today" : "/sign-in");
 }
