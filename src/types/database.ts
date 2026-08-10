@@ -14,6 +14,38 @@ export type Database = {
   };
   public: {
     Tables: {
+      completions: {
+        Row: {
+          created_at: string;
+          habit_id: string;
+          id: string;
+          local_date: string;
+          owner_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          habit_id: string;
+          id?: string;
+          local_date: string;
+          owner_id: string;
+        };
+        Update: {
+          created_at?: string;
+          habit_id?: string;
+          id?: string;
+          local_date?: string;
+          owner_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "completions_habit_owner_fk";
+            columns: ["habit_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "habits";
+            referencedColumns: ["id", "owner_id"];
+          },
+        ];
+      };
       habit_schedules: {
         Row: {
           created_at: string;
