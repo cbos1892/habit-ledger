@@ -154,7 +154,27 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      create_habit_with_schedule: {
+        Args: {
+          p_color: string;
+          p_icon: string;
+          p_name: string;
+          p_start_date: string;
+          p_weekdays: number[];
+        };
+        Returns: string;
+      };
+      update_habit_with_schedule: {
+        Args: {
+          p_color: string;
+          p_habit_id: string;
+          p_icon: string;
+          p_name: string;
+          p_start_date: string;
+          p_weekdays: number[];
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;

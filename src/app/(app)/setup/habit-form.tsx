@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, Feedback, TextField } from "@/components/ui";
 import { HABIT_COLORS, type HabitFormValues } from "@/lib/habit-form";
+import { ISO_WEEKDAYS, type IsoWeekday } from "@/lib/habit-schedule";
 
 import type { HabitFormState } from "./habit-actions";
 import styles from "./habit-form.module.css";
@@ -28,10 +29,32 @@ const colorLabels: Record<(typeof HABIT_COLORS)[number], string> = {
   rose: "Rose",
 };
 
+const weekdayLabels: Record<IsoWeekday, string> = {
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
+  7: "Sunday",
+};
+
 export function HabitForm({ action, initialValues, mode }: HabitFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [weekdays, setWeekdays] = useState(initialValues.weekdays);
   const values = state.status === "error" ? state.values : initialValues;
   const errors = state.status === "error" ? state.errors : {};
+  const isEveryDay = weekdays.length === ISO_WEEKDAYS.length;
+
+  function toggleWeekday(weekday: IsoWeekday, selected: boolean) {
+    setWeekdays((current) =>
+      selected
+        ? ISO_WEEKDAYS.filter(
+            (candidate) => candidate === weekday || current.includes(candidate),
+          )
+        : current.filter((candidate) => candidate !== weekday),
+    );
+  }
 
   return (
     <form action={formAction} className={styles.form} noValidate>
@@ -112,6 +135,52 @@ export function HabitForm({ action, initialValues, mode }: HabitFormProps) {
         required
         type="date"
       />
+
+      <fieldset
+        aria-describedby={errors.weekdays ? "habit-weekdays-error" : undefined}
+        className={styles.scheduleField}
+        disabled={pending}
+      >
+        <legend>Schedule</legend>
+        <p className={styles.scheduleDescription}>
+          Choose every day or the weekdays when this habit should appear.
+        </p>
+        <label className={styles.everyDayOption}>
+          <input
+            checked={isEveryDay}
+            onChange={(event) =>
+              setWeekdays(event.target.checked ? [...ISO_WEEKDAYS] : [])
+            }
+            type="checkbox"
+          />
+          <span>Every day</span>
+        </label>
+        <div className={styles.weekdayOptions}>
+          {ISO_WEEKDAYS.map((weekday) => (
+            <label className={styles.weekdayOption} key={weekday}>
+              <input
+                aria-label={weekdayLabels[weekday]}
+                checked={weekdays.includes(weekday)}
+                name="weekdays"
+                onChange={(event) =>
+                  toggleWeekday(weekday, event.target.checked)
+                }
+                type="checkbox"
+                value={weekday}
+              />
+              <span aria-hidden="true">
+                {weekdayLabels[weekday].slice(0, 3)}
+              </span>
+              <span className={styles.srOnly}>{weekdayLabels[weekday]}</span>
+            </label>
+          ))}
+        </div>
+        {errors.weekdays ? (
+          <p className={styles.error} id="habit-weekdays-error">
+            {errors.weekdays}
+          </p>
+        ) : null}
+      </fieldset>
 
       <div className={styles.actions}>
         <Button disabled={pending} type="submit">

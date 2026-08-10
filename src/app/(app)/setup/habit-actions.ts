@@ -45,27 +45,16 @@ export async function createHabit(
     return failure(validation.values, validation.errors);
   }
 
-  const user = await requireCurrentUser();
+  await requireCurrentUser();
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { data: lastHabit, error: orderError } = await supabase
-      .from("habits")
-      .select("display_order")
-      .eq("owner_id", user.id)
-      .order("display_order", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (orderError) throw orderError;
-
-    const { error } = await supabase.from("habits").insert({
-      owner_id: user.id,
-      name: validation.data.name,
-      icon: validation.data.icon,
-      color: validation.data.color,
-      start_date: validation.data.startDate,
-      display_order: (lastHabit?.display_order ?? -1) + 1,
+    const { error } = await supabase.rpc("create_habit_with_schedule", {
+      p_color: validation.data.color,
+      p_icon: validation.data.icon,
+      p_name: validation.data.name,
+      p_start_date: validation.data.startDate,
+      p_weekdays: validation.data.weekdays,
     });
 
     if (error) throw error;
@@ -88,25 +77,20 @@ export async function updateHabit(
     return failure(validation.values, validation.errors);
   }
 
-  const user = await requireCurrentUser();
+  await requireCurrentUser();
 
   try {
     const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("habits")
-      .update({
-        name: validation.data.name,
-        icon: validation.data.icon,
-        color: validation.data.color,
-        start_date: validation.data.startDate,
-      })
-      .eq("id", habitId)
-      .eq("owner_id", user.id)
-      .is("archived_at", null)
-      .select("id")
-      .maybeSingle();
+    const { error } = await supabase.rpc("update_habit_with_schedule", {
+      p_color: validation.data.color,
+      p_habit_id: habitId,
+      p_icon: validation.data.icon,
+      p_name: validation.data.name,
+      p_start_date: validation.data.startDate,
+      p_weekdays: validation.data.weekdays,
+    });
 
-    if (error || !data) throw error ?? new Error("Habit not found");
+    if (error) throw error;
   } catch {
     return failure(validation.values);
   }

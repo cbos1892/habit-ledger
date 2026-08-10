@@ -18,6 +18,93 @@
   padding: 0;
 }
 
+.scheduleField {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-3);
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.scheduleField legend {
+  padding: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 750;
+}
+
+.scheduleDescription {
+  margin: calc(var(--space-2) * -1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.everyDayOption {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  font-size: var(--text-sm);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.everyDayOption input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-accent);
+}
+
+.weekdayOptions {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.weekdayOption {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.weekdayOption:has(input:checked) {
+  border-color: var(--color-text);
+  background: var(--color-surface-subtle);
+  box-shadow:
+    0 0 0 2px var(--color-surface-raised),
+    0 0 0 4px var(--color-focus);
+}
+
+.weekdayOption:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.weekdayOption input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.srOnly {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .colorField legend {
   padding: 0;
   color: var(--color-text);
@@ -133,6 +220,10 @@
   .colorOption {
     justify-content: flex-start;
     padding-inline: var(--space-3);
+  }
+
+  .weekdayOptions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .actions {

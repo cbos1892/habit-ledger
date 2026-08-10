@@ -60,7 +60,7 @@ export default async function SetupPage({
         <div className={styles.sectionHeading}>
           <div>
             <h2 id="habits-title">Habits</h2>
-            <p>Create a clear identity now; schedules can be added next.</p>
+            <p>Create a clear identity and choose when each habit appears.</p>
           </div>
           <Link className={styles.primaryLink} href="/setup/habits/new">
             New habit

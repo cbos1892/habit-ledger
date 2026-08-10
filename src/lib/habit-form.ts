@@ -1,3 +1,5 @@
+import { ISO_WEEKDAYS, isIsoWeekday, type IsoWeekday } from "./habit-schedule";
+
 export const HABIT_COLORS = ["fern", "ocean", "sun", "plum", "rose"] as const;
 
 export type HabitColor = (typeof HABIT_COLORS)[number];
@@ -7,6 +9,7 @@ export type HabitFormValues = {
   icon: string;
   color: string;
   startDate: string;
+  weekdays: IsoWeekday[];
 };
 
 export type HabitFormErrors = Partial<Record<keyof HabitFormValues, string>>;
@@ -44,12 +47,28 @@ function isLocalDate(value: string) {
   );
 }
 
+function readWeekdays(formData: FormData): {
+  invalid: boolean;
+  weekdays: IsoWeekday[];
+} {
+  const rawWeekdays = formData.getAll("weekdays");
+  const parsed = rawWeekdays.map((value) =>
+    typeof value === "string" ? Number(value) : Number.NaN,
+  );
+  const invalid = parsed.some((weekday) => !isIsoWeekday(weekday));
+  const weekdays = ISO_WEEKDAYS.filter((weekday) => parsed.includes(weekday));
+
+  return { invalid, weekdays };
+}
+
 export function validateHabitForm(formData: FormData): HabitFormValidation {
+  const schedule = readWeekdays(formData);
   const values: HabitFormValues = {
     name: readText(formData, "name"),
     icon: readText(formData, "icon"),
     color: readText(formData, "color"),
     startDate: readText(formData, "startDate"),
+    weekdays: schedule.weekdays,
   };
   const errors: HabitFormErrors = {};
 
@@ -71,6 +90,10 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
 
   if (!isLocalDate(values.startDate)) {
     errors.startDate = "Choose a valid start date.";
+  }
+
+  if (schedule.invalid || values.weekdays.length === 0) {
+    errors.weekdays = "Choose at least one day of the week.";
   }
 
   if (Object.keys(errors).length > 0) {

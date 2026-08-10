@@ -11,7 +11,7 @@ import styles from "../../../time-zone.module.css";
 
 export const metadata: Metadata = {
   title: "Edit habit",
-  description: "Update a habit's identity and start date.",
+  description: "Update a habit's identity and schedule.",
 };
 
 export default async function EditHabitPage({
@@ -46,6 +46,7 @@ export default async function EditHabitPage({
             icon: habit.icon,
             color: habit.color,
             startDate: habit.start_date,
+            weekdays: habit.weekdays,
           }}
           mode="edit"
         />

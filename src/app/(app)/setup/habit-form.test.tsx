@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { HabitForm } from "./habit-form";
@@ -15,6 +15,7 @@ describe("HabitForm", () => {
           icon: "",
           color: "fern",
           startDate: "2026-08-10",
+          weekdays: [1, 2, 3, 4, 5, 6, 7],
         }}
         mode="create"
       />,
@@ -24,6 +25,9 @@ describe("HabitForm", () => {
     expect(screen.getByLabelText("Habit name")).toBeRequired();
     expect(screen.getByRole("radio", { name: /Fern/ })).toBeChecked();
     expect(screen.getByLabelText("Start date")).toHaveValue("2026-08-10");
+    expect(screen.getByLabelText("Every day")).toBeChecked();
+    expect(screen.getByLabelText("Monday")).toBeChecked();
+    expect(screen.getByLabelText("Sunday")).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Create habit" }),
     ).toBeInTheDocument();
@@ -38,6 +42,7 @@ describe("HabitForm", () => {
           icon: "📚",
           color: "plum",
           startDate: "2026-07-01",
+          weekdays: [1, 3, 5],
         }}
         mode="edit"
       />,
@@ -46,8 +51,36 @@ describe("HabitForm", () => {
     expect(screen.getByLabelText("Habit name")).toHaveValue("Read");
     expect(screen.getByLabelText("Icon or emoji")).toHaveValue("📚");
     expect(screen.getByRole("radio", { name: /Plum/ })).toBeChecked();
+    expect(screen.getByLabelText("Monday")).toBeChecked();
+    expect(screen.getByLabelText("Tuesday")).not.toBeChecked();
+    expect(screen.getByLabelText("Friday")).toBeChecked();
     expect(
       screen.getByRole("button", { name: "Save changes" }),
     ).toBeInTheDocument();
+  });
+
+  it("supports selecting every day or a custom non-empty set", () => {
+    render(
+      <HabitForm
+        action={action}
+        initialValues={{
+          name: "Read",
+          icon: "📚",
+          color: "plum",
+          startDate: "2026-07-01",
+          weekdays: [1, 3, 5],
+        }}
+        mode="edit"
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Every day"));
+    expect(screen.getByLabelText("Every day")).toBeChecked();
+    expect(screen.getByLabelText("Tuesday")).toBeChecked();
+
+    fireEvent.click(screen.getByLabelText("Thursday"));
+    expect(screen.getByLabelText("Every day")).not.toBeChecked();
+    expect(screen.getByLabelText("Thursday")).not.toBeChecked();
+    expect(screen.getByLabelText("Monday")).toBeChecked();
   });
 });

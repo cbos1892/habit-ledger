@@ -19,12 +19,25 @@ vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(),
 }));
 
-function habitFormData(overrides: Record<string, string> = {}) {
+function habitFormData(
+  overrides: Record<string, string> & { weekdays?: string[] } = {},
+) {
   const data = new FormData();
   data.set("name", overrides.name ?? "Morning walk");
   data.set("icon", overrides.icon ?? "🌿");
   data.set("color", overrides.color ?? "fern");
   data.set("startDate", overrides.startDate ?? "2026-08-10");
+  for (const weekday of overrides.weekdays ?? [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+  ]) {
+    data.append("weekdays", weekday);
+  }
   return data;
 }
 
@@ -49,81 +62,50 @@ describe("habit form actions", () => {
   });
 
   it("creates a habit for the authenticated owner and returns to Setup", async () => {
-    const maybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: { display_order: 3 }, error: null });
-    const orderQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      maybeSingle,
-    };
-    const insert = vi.fn().mockResolvedValue({ error: null });
-    const from = vi
-      .fn()
-      .mockReturnValueOnce(orderQuery)
-      .mockReturnValueOnce({ insert });
-    vi.mocked(createServerSupabaseClient).mockResolvedValue({ from } as never);
+    const rpc = vi.fn().mockResolvedValue({ data: "habit-123", error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
 
     await expect(
       createHabit({ status: "idle" }, habitFormData()),
     ).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(insert).toHaveBeenCalledWith({
-      owner_id: "user-123",
-      name: "Morning walk",
-      icon: "🌿",
-      color: "fern",
-      start_date: "2026-08-10",
-      display_order: 4,
+    expect(rpc).toHaveBeenCalledWith("create_habit_with_schedule", {
+      p_color: "fern",
+      p_icon: "🌿",
+      p_name: "Morning walk",
+      p_start_date: "2026-08-10",
+      p_weekdays: [1, 2, 3, 4, 5, 6, 7],
     });
     expect(revalidatePath).toHaveBeenCalledWith("/setup");
     expect(redirect).toHaveBeenCalledWith("/setup?habit=created");
   });
 
   it("updates only an active habit belonging to the authenticated owner", async () => {
-    const query = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValue({ data: { id: "habit-123" }, error: null }),
-    };
+    const rpc = vi.fn().mockResolvedValue({ data: "habit-123", error: null });
     vi.mocked(createServerSupabaseClient).mockResolvedValue({
-      from: vi.fn(() => query),
+      rpc,
     } as never);
 
     await expect(
       updateHabit("habit-123", { status: "idle" }, habitFormData()),
     ).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(query.update).toHaveBeenCalledWith({
-      name: "Morning walk",
-      icon: "🌿",
-      color: "fern",
-      start_date: "2026-08-10",
+    expect(rpc).toHaveBeenCalledWith("update_habit_with_schedule", {
+      p_color: "fern",
+      p_habit_id: "habit-123",
+      p_icon: "🌿",
+      p_name: "Morning walk",
+      p_start_date: "2026-08-10",
+      p_weekdays: [1, 2, 3, 4, 5, 6, 7],
     });
-    expect(query.eq).toHaveBeenNthCalledWith(1, "id", "habit-123");
-    expect(query.eq).toHaveBeenNthCalledWith(2, "owner_id", "user-123");
-    expect(query.is).toHaveBeenCalledWith("archived_at", null);
     expect(redirect).toHaveBeenCalledWith("/setup?habit=updated");
   });
 
   it("keeps submitted values available when persistence fails", async () => {
-    const query = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      maybeSingle: vi
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({
+      rpc: vi
         .fn()
         .mockResolvedValue({ data: null, error: { message: "unavailable" } }),
-    };
-    vi.mocked(createServerSupabaseClient).mockResolvedValue({
-      from: vi.fn(() => query),
     } as never);
 
     const result = await updateHabit(

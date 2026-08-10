@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Card } from "@/components/ui";
 import { requireConfiguredProfile } from "@/lib/profile";
+import { ISO_WEEKDAYS } from "@/lib/habit-schedule";
 import { toLocalDateKey } from "@/lib/time-zone";
 
 import { createHabit } from "../../habit-actions";
@@ -24,7 +25,7 @@ export default async function NewHabitPage() {
           New habit
         </h1>
         <p className="page-description">
-          Give this habit a simple identity. Scheduling comes next.
+          Give this habit a simple identity and choose when it should appear.
         </p>
       </div>
       <Card className={styles.card}>
@@ -35,6 +36,7 @@ export default async function NewHabitPage() {
             icon: "",
             color: "fern",
             startDate: toLocalDateKey(new Date(), profile.time_zone),
+            weekdays: [...ISO_WEEKDAYS],
           }}
           mode="create"
         />
