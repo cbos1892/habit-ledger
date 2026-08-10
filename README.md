@@ -12,7 +12,7 @@ Habit Ledger is a private, mobile-friendly habit tracker. See [PRD.md](./PRD.md)
 - Vercel project: `curtis-s-team/habit-ledger`
 - Production URL: [habitledger.vercel.app](https://habitledger.vercel.app/)
 
-The checked-in Supabase migrations include the user-owned profile, habit, and weekday-schedule foundations. Completion tables will be added in a later migration when that task is implemented.
+The checked-in Supabase migrations include user-owned profiles, habits, weekday schedules, and one daily completion per habit and local calendar date. All application tables enforce ownership with row-level security.
 
 ## Prerequisites
 
