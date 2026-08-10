@@ -1,9 +1,55 @@
+"use client";
+
+import {
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+
 import type { TodayViewModel } from "../../../lib/today";
+import { setHabitCompletion } from "./completion-actions";
 import styles from "./today.module.css";
 
 type TodayViewProps = Readonly<{
   today: TodayViewModel;
 }>;
+
+type CompletionNotice = Readonly<{
+  habitId: string;
+  habitName: string;
+  tone: "success" | "error";
+  message: string;
+}>;
+
+type OptimisticCompletion = Readonly<{
+  habitId: string;
+  completed: boolean;
+}>;
+
+function updateOptimisticCompletion(
+  today: TodayViewModel,
+  update: OptimisticCompletion,
+): TodayViewModel {
+  if (today.status === "empty") return today;
+
+  const habits = today.habits.map((habit) =>
+    habit.id === update.habitId
+      ? {
+          ...habit,
+          completed: update.completed,
+          completionId: update.completed ? habit.completionId : null,
+        }
+      : habit,
+  );
+
+  return {
+    ...today,
+    completedCount: habits.filter(({ completed }) => completed).length,
+    habits,
+  };
+}
 
 function formatLocalDate(localDate: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -54,7 +100,76 @@ function Progress({ completed, total }: { completed: number; total: number }) {
 }
 
 export function TodayView({ today }: TodayViewProps) {
-  const dateLabel = formatLocalDate(today.localDate);
+  const [optimisticToday, setOptimisticCompletion] = useOptimistic(
+    today,
+    updateOptimisticCompletion,
+  );
+  const [, startTransition] = useTransition();
+  const [notice, setNotice] = useState<CompletionNotice | null>(null);
+  const latestMutationByHabit = useRef(new Map<string, number>());
+  const mutationSequence = useRef(0);
+  const dateLabel = formatLocalDate(optimisticToday.localDate);
+
+  useEffect(() => {
+    if (!notice) return;
+
+    const timeout = window.setTimeout(
+      () => setNotice(null),
+      notice.tone === "success" ? 6000 : 8000,
+    );
+
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
+  function mutateCompletion(habitId: string, completed?: boolean) {
+    const habit = optimisticToday.habits.find(({ id }) => id === habitId);
+
+    if (!habit) return;
+
+    const nextCompleted = completed ?? !habit.completed;
+    const mutationId = ++mutationSequence.current;
+    latestMutationByHabit.current.set(habitId, mutationId);
+    setNotice(null);
+
+    startTransition(async () => {
+      setOptimisticCompletion({ habitId, completed: nextCompleted });
+
+      let result;
+
+      try {
+        result = await setHabitCompletion(habitId, nextCompleted);
+      } catch {
+        result = {
+          status: "error" as const,
+          message:
+            "We couldn't update this habit. Your previous check-in is restored.",
+        };
+      }
+
+      if (latestMutationByHabit.current.get(habitId) !== mutationId) return;
+
+      if (result.status === "error") {
+        setNotice({
+          habitId,
+          habitName: habit.name,
+          message: result.message,
+          tone: "error",
+        });
+        return;
+      }
+
+      if (result.completed) {
+        setNotice({
+          habitId,
+          habitName: habit.name,
+          message: `${habit.name} is complete.`,
+          tone: "success",
+        });
+      } else {
+        setNotice(null);
+      }
+    });
+  }
 
   return (
     <div className={styles.page}>
@@ -64,15 +179,45 @@ export function TodayView({ today }: TodayViewProps) {
           <h1 className={styles.title}>Today</h1>
           <p className={styles.date}>{dateLabel}</p>
         </div>
-        {today.status === "ready" ? (
+        {optimisticToday.status === "ready" ? (
           <p className={styles.summary}>
-            {today.totalCount} scheduled{" "}
-            {today.totalCount === 1 ? "habit" : "habits"}
+            {optimisticToday.totalCount} scheduled{" "}
+            {optimisticToday.totalCount === 1 ? "habit" : "habits"}
           </p>
         ) : null}
       </header>
 
-      {today.status === "empty" ? (
+      {notice ? (
+        <div
+          className={styles.notice}
+          data-tone={notice.tone}
+          role={notice.tone === "error" ? "alert" : "status"}
+        >
+          <span>{notice.message}</span>
+          <div className={styles.noticeActions}>
+            {notice.tone === "success" ? (
+              <button
+                className={styles.noticeButton}
+                type="button"
+                aria-label={`Undo completion for ${notice.habitName}`}
+                onClick={() => mutateCompletion(notice.habitId, false)}
+              >
+                Undo
+              </button>
+            ) : null}
+            <button
+              className={styles.noticeDismiss}
+              type="button"
+              aria-label={`Dismiss ${notice.tone} message`}
+              onClick={() => setNotice(null)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {optimisticToday.status === "empty" ? (
         <section className={styles.empty} aria-labelledby="empty-title">
           <span className={styles.emptyIcon} aria-hidden="true">
             ☀️
@@ -88,7 +233,10 @@ export function TodayView({ today }: TodayViewProps) {
         </section>
       ) : (
         <>
-          <Progress completed={today.completedCount} total={today.totalCount} />
+          <Progress
+            completed={optimisticToday.completedCount}
+            total={optimisticToday.totalCount}
+          />
           <section
             className={styles.habits}
             aria-labelledby="today-habits-title"
@@ -98,7 +246,7 @@ export function TodayView({ today }: TodayViewProps) {
               <p>Choose a card to update it.</p>
             </div>
             <ul className={styles.habitList}>
-              {today.habits.map((habit) => (
+              {optimisticToday.habits.map((habit) => (
                 <li key={habit.id}>
                   <button
                     className={styles.habitCard}
@@ -106,6 +254,7 @@ export function TodayView({ today }: TodayViewProps) {
                     type="button"
                     aria-pressed={habit.completed}
                     aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
+                    onClick={() => mutateCompletion(habit.id)}
                   >
                     <span className={styles.habitIdentity}>
                       <span className={styles.habitIcon} aria-hidden="true">

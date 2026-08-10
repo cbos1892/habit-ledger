@@ -12,6 +12,9 @@ vi.mock("../../../lib/profile", () => ({
 vi.mock("../../../lib/today", () => ({
   getTodayViewModel: vi.fn(),
 }));
+vi.mock("./completion-actions", () => ({
+  setHabitCompletion: vi.fn(),
+}));
 
 describe("Today page", () => {
   it("loads the current user's local Today view model", async () => {
