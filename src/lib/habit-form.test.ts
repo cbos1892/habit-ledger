@@ -78,12 +78,18 @@ describe("habit form validation", () => {
     });
   });
 
-  it("counts emoji by code point for the database limit", () => {
-    const result = validateHabitForm(habitFormData({ icon: "🌿".repeat(17) }));
+  it("accepts up to three emoji graphemes, including joined emojis", () => {
+    expect(validateHabitForm(habitFormData({ icon: "👨‍👩‍👧‍👦🏳️‍🌈🌿" }))).toMatchObject({
+      success: true,
+    });
+  });
+
+  it("rejects more than three emoji graphemes", () => {
+    const result = validateHabitForm(habitFormData({ icon: "🌿📚⭐️🚶" }));
 
     expect(result).toMatchObject({
       success: false,
-      errors: { icon: expect.stringContaining("16") },
+      errors: { icon: expect.stringContaining("3") },
     });
   });
 

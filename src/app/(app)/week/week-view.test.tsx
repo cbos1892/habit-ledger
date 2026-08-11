@@ -42,7 +42,7 @@ const week: WeeklyViewModel = {
 };
 
 describe("Week view", () => {
-  it("renders a semantic seven-day grid with sticky identity content", () => {
+  it("renders a semantic seven-day grid with emoji-only visual identity", () => {
     render(<WeekView week={week} />);
 
     const table = screen.getByRole("table", {
@@ -52,6 +52,10 @@ describe("Week view", () => {
     expect(
       within(table).getByRole("rowheader", { name: /Morning walk/ }),
     ).toBeVisible();
+    expect(within(table).getByText("🚶")).toBeVisible();
+    expect(within(table).getByText("Morning walk").className).toContain(
+      "srOnly",
+    );
     expect(
       screen.getByRole("region", { name: "Scrollable weekly habit grid" }),
     ).toHaveAttribute("tabindex", "0");

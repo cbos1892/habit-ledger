@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { Button, Feedback, TextField } from "@/components/ui";
-import { HABIT_COLORS, type HabitFormValues } from "@/lib/habit-form";
+import {
+  HABIT_COLORS,
+  HABIT_ICON_MAX_LENGTH,
+  type HabitFormValues,
+} from "@/lib/habit-form";
 import { ISO_WEEKDAYS, type IsoWeekday } from "@/lib/habit-schedule";
 
 import type { HabitFormState } from "./habit-actions";
@@ -68,13 +72,14 @@ export function HabitForm({ action, initialValues, mode }: HabitFormProps) {
         <TextField
           autoComplete="off"
           defaultValue={values.icon}
+          description="Choose one to three emojis. Combined emojis count as one."
           disabled={pending}
           error={errors.icon}
           id="habit-icon"
-          label="Icon or emoji"
-          maxLength={16}
+          label="Emojis"
+          maxLength={HABIT_ICON_MAX_LENGTH}
           name="icon"
-          placeholder="🌿"
+          placeholder="🌿✨"
           required
         />
         <TextField

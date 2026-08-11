@@ -21,7 +21,9 @@ describe("HabitForm", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Icon or emoji")).toBeRequired();
+    expect(screen.getByLabelText("Emojis")).toBeRequired();
+    expect(screen.getByLabelText("Emojis")).toHaveAttribute("maxlength", "64");
+    expect(screen.getByText(/one to three emojis/i)).toBeVisible();
     expect(screen.getByLabelText("Habit name")).toBeRequired();
     expect(screen.getByRole("radio", { name: /Fern/ })).toBeChecked();
     expect(screen.getByLabelText("Start date")).toHaveValue("2026-08-10");
@@ -49,7 +51,7 @@ describe("HabitForm", () => {
     );
 
     expect(screen.getByLabelText("Habit name")).toHaveValue("Read");
-    expect(screen.getByLabelText("Icon or emoji")).toHaveValue("📚");
+    expect(screen.getByLabelText("Emojis")).toHaveValue("📚");
     expect(screen.getByRole("radio", { name: /Plum/ })).toBeChecked();
     expect(screen.getByLabelText("Monday")).toBeChecked();
     expect(screen.getByLabelText("Tuesday")).not.toBeChecked();

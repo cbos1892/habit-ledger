@@ -65,7 +65,7 @@ function HabitRow({
           <span className={styles.habitIcon} aria-hidden="true">
             {row.icon}
           </span>
-          <span className={styles.habitName}>{row.name}</span>
+          <span className={styles.srOnly}>{row.name}</span>
         </span>
       </th>
       {row.cells.map((cell) => {
