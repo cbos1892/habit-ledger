@@ -40,8 +40,14 @@ export function isHabitScheduledAt(
 ): boolean {
   const localDate = toLocalDateKey(instant, timeZone);
 
-  return (
-    localDate >= schedule.startDate &&
-    schedule.weekdays.includes(getIsoWeekday(localDate))
-  );
+  return isHabitScheduledOnDate(schedule, localDate);
+}
+
+export function isHabitScheduledOnDate(
+  schedule: HabitSchedule,
+  localDate: string,
+): boolean {
+  const weekday = getIsoWeekday(localDate);
+
+  return localDate >= schedule.startDate && schedule.weekdays.includes(weekday);
 }

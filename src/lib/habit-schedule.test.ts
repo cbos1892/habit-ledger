@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { getIsoWeekday, isHabitScheduledAt } from "./habit-schedule";
+import {
+  getIsoWeekday,
+  isHabitScheduledAt,
+  isHabitScheduledOnDate,
+} from "./habit-schedule";
 
 describe("habit schedule evaluation", () => {
   it("uses ISO weekdays without depending on locale", () => {
@@ -39,6 +43,16 @@ describe("habit schedule evaluation", () => {
         "America/New_York",
       ),
     ).toBe(true);
+  });
+
+  it("evaluates an explicit local date without converting it as an instant", () => {
+    const mondayOnly = {
+      startDate: "2026-08-01",
+      weekdays: [1] as const,
+    };
+
+    expect(isHabitScheduledOnDate(mondayOnly, "2026-08-10")).toBe(true);
+    expect(isHabitScheduledOnDate(mondayOnly, "2026-08-11")).toBe(false);
   });
 
   it("stays on the correct local date across daylight-saving boundaries", () => {
