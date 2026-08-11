@@ -100,6 +100,7 @@ describe("weekly view model", () => {
       },
     ]);
     expect(result).toMatchObject({
+      currentLocalDate: "2026-08-05",
       endDate: "2026-08-09",
       startDate: "2026-08-03",
       status: "ready",
@@ -180,6 +181,7 @@ describe("weekly view model", () => {
     );
 
     expect(result).toEqual({
+      currentLocalDate: "2026-08-05",
       endDate: "2026-08-08",
       localDates: [
         "2026-08-02",

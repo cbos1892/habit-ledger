@@ -30,6 +30,7 @@ export type WeeklyHabitRow = Readonly<
 >;
 
 type WeeklyViewModelBase = Readonly<{
+  currentLocalDate: string;
   endDate: string;
   localDates: readonly string[];
   startDate: string;
@@ -130,6 +131,7 @@ export async function getWeeklyViewModel(
   weekStartsOn: 0 | 1 = 1,
 ): Promise<WeeklyViewModel> {
   const localDates = getLocalWeekDateKeys(instant, timeZone, weekStartsOn);
+  const currentLocalDate = toLocalDateKey(instant, timeZone);
   const startDate = localDates[0];
   const endDate = localDates[6];
   const supabase = await createServerSupabaseClient();
@@ -174,6 +176,7 @@ export async function getWeeklyViewModel(
   });
 
   const shared = {
+    currentLocalDate,
     endDate,
     localDates,
     startDate,
