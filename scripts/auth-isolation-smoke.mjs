@@ -62,13 +62,30 @@ async function authenticatedTestSubject(
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
-  const { data, error } = await client.auth.getUser(accessToken);
+  const { data: claimsData, error: claimsError } =
+    await client.auth.getClaims(accessToken);
 
-  if (error || !data.user) {
+  if (claimsError || !claimsData?.claims.sub) {
+    throw new Error(`${label} access token claims could not be verified.`);
+  }
+
+  // This out-of-band smoke check intentionally asks Auth for the current user
+  // record as an additional revocation/session check. Routine application SSR
+  // authorization uses the verified claims path instead.
+  const { data: userData, error: userError } =
+    await client.auth.getUser(accessToken);
+
+  if (userError || !userData.user) {
     throw new Error(`${label} access token is invalid or expired.`);
   }
 
-  return { client, id: data.user.id, label };
+  if (userData.user.id !== claimsData.claims.sub) {
+    throw new Error(
+      `${label} user record does not match the verified subject.`,
+    );
+  }
+
+  return { client, id: claimsData.claims.sub, label };
 }
 
 async function assertOwnProfileIsOnlyVisibleRow(subject) {

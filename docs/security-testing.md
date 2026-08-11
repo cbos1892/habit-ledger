@@ -8,12 +8,15 @@ enforce ownership with row-level security (RLS).
 
 The Vitest suite verifies the browser-visible server boundaries:
 
-- anonymous and expired sessions redirect before private layouts render;
+- verified JWT claims expose only the stable subject identifier;
+- missing, expired, malformed, and spoofed tokens redirect before private
+  layouts render;
 - unavailable authentication fails closed;
 - valid PKCE callbacks exchange the code and accept only local destinations;
 - missing or expired callback codes return to sign-in with a recoverable error;
 - sign-out clears the local session and returns a `303` redirect to sign-in; and
-- refreshed and expired session cookies are propagated to the browser.
+- refreshed and expired session cookies are propagated to the browser along
+  with the response's private, no-store cache headers.
 
 The pgTAP suite in `supabase/tests/database/` runs with an authenticated role
 and real JWT subject claims. It verifies that a user sees only their own profile
@@ -49,11 +52,15 @@ SMOKE_USER_B_ACCESS_TOKEN="short-lived-token-b" \
 pnpm smoke:auth-isolation
 ```
 
-The script confirms both tokens are valid and belong to different users, each
-client sees exactly its own profile, cross-user reads and updates affect no
-rows, and a cross-user delete does not remove the target profile. Discard the
-tokens after the run and record only the deployment URL, date, and pass/fail
-result in the task or pull request.
+The script verifies each token's claims, confirms the verified `sub` matches a
+fresh Auth user lookup, and checks that the two tokens belong to different
+users. Each client must see exactly its own profile, cross-user reads and
+updates must affect no rows, and a cross-user delete must not remove the target
+profile. The fresh `getUser()` call is intentional in this out-of-band smoke
+test because it checks current server-side session state; routine application
+SSR authorization uses `getClaims()` so the Auth user endpoint is not in the
+warm request path. Discard the tokens after the run and record only the
+deployment URL, date, and pass/fail result in the task or pull request.
 
 ## Checklist for every future user-owned table
 

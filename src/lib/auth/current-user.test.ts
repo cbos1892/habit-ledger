@@ -24,23 +24,25 @@ vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(),
 }));
 
+const getClaims = vi.fn();
 const getUser = vi.fn();
 
 describe("current user access", () => {
   beforeEach(() => {
+    getClaims.mockReset();
     getUser.mockReset();
     vi.mocked(redirect).mockClear();
     vi.mocked(createServerSupabaseClient).mockReset();
     vi.mocked(createServerSupabaseClient).mockResolvedValue({
-      auth: { getUser },
+      auth: { getClaims, getUser },
     } as never);
   });
 
-  it("returns only the authenticated identity needed by server data access", async () => {
-    getUser.mockResolvedValue({
+  it("returns only the stable identity from verified JWT claims", async () => {
+    getClaims.mockResolvedValue({
       data: {
-        user: {
-          id: "user-123",
+        claims: {
+          sub: "user-123",
           email: "private@example.com",
           app_metadata: { role: "authenticated" },
         },
@@ -50,30 +52,33 @@ describe("current user access", () => {
 
     const user = await getCurrentUser();
 
+    expect(getClaims).toHaveBeenCalledOnce();
+    expect(getUser).not.toHaveBeenCalled();
     expect(user).toEqual({ id: "user-123" });
     expect(user).not.toHaveProperty("email");
     expect(Object.isFrozen(user)).toBe(true);
   });
 
-  it("redirects anonymous users before private data can be requested", async () => {
-    getUser.mockResolvedValue({ data: { user: null }, error: null });
+  it("redirects when the request has no authenticated token", async () => {
+    getClaims.mockResolvedValue({ data: null, error: null });
 
     await expect(requireCurrentUser()).rejects.toThrow("NEXT_REDIRECT");
     expect(redirect).toHaveBeenCalledWith("/sign-in");
   });
 
-  it("treats expired sessions as anonymous and redirects safely", async () => {
-    getUser.mockResolvedValue({
-      data: { user: null },
-      error: { code: "refresh_token_not_found", message: "expired" },
-    });
+  it.each([
+    ["expired", { code: "bad_jwt", message: "JWT has expired" }],
+    ["malformed", { code: "bad_jwt", message: "Invalid JWT structure" }],
+    ["spoofed", { code: "bad_jwt", message: "Invalid JWT signature" }],
+  ])("fails closed for a %s token", async (_case, error) => {
+    getClaims.mockResolvedValue({ data: null, error });
 
     await expect(requireCurrentUser()).rejects.toThrow("NEXT_REDIRECT");
     expect(redirect).toHaveBeenCalledWith("/sign-in");
   });
 
-  it("fails closed when the authentication service cannot be reached", async () => {
-    getUser.mockRejectedValue(new Error("network unavailable"));
+  it("fails closed when claims cannot be verified", async () => {
+    getClaims.mockRejectedValue(new Error("JWKS unavailable"));
 
     await expect(requireCurrentUser()).rejects.toThrow("NEXT_REDIRECT");
     expect(redirect).toHaveBeenCalledWith("/sign-in");
