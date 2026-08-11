@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
-import { RoutePlaceholder } from "../../../components/route-placeholder";
 import { getNavigationItem } from "../../../lib/navigation";
 import { requireConfiguredProfile } from "../../../lib/profile";
+import { getWeeklyViewModel } from "../../../lib/week";
+import { WeekView } from "./week-view";
 
 const route = getNavigationItem("week");
 
@@ -12,14 +13,8 @@ export const metadata: Metadata = {
 };
 
 export default async function WeekPage() {
-  await requireConfiguredProfile();
+  const profile = await requireConfiguredProfile();
+  const week = await getWeeklyViewModel(profile.id, profile.time_zone);
 
-  return (
-    <RoutePlaceholder
-      eyebrow="Seven-day view"
-      title="Week"
-      description={route.description}
-      nextStep="A flexible weekly grid will make progress easy to see and adjust."
-    />
-  );
+  return <WeekView week={week} />;
 }
