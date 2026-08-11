@@ -154,6 +154,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      archive_habit: {
+        Args: { p_habit_id: string };
+        Returns: string;
+      };
       create_habit_with_schedule: {
         Args: {
           p_color: string;
@@ -162,6 +166,14 @@ export type Database = {
           p_start_date: string;
           p_weekdays: number[];
         };
+        Returns: string;
+      };
+      move_habit: {
+        Args: { p_direction: string; p_habit_id: string };
+        Returns: string;
+      };
+      restore_habit: {
+        Args: { p_habit_id: string };
         Returns: string;
       };
       update_habit_with_schedule: {

@@ -1,6 +1,7 @@
 import { ISO_WEEKDAYS, isIsoWeekday, type IsoWeekday } from "./habit-schedule";
 
 export const HABIT_COLORS = ["fern", "ocean", "sun", "plum", "rose"] as const;
+export const HABIT_ICON_MAX_LENGTH = 64;
 
 export type HabitColor = (typeof HABIT_COLORS)[number];
 
@@ -47,6 +48,12 @@ function isLocalDate(value: string) {
   );
 }
 
+function countGraphemes(value: string) {
+  return Array.from(
+    new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(value),
+  ).length;
+}
+
 function readWeekdays(formData: FormData): {
   invalid: boolean;
   weekdays: IsoWeekday[];
@@ -79,9 +86,11 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
   }
 
   if (!values.icon) {
-    errors.icon = "Add an emoji or short icon.";
-  } else if (Array.from(values.icon).length > 16) {
-    errors.icon = "Keep the icon to 16 characters or fewer.";
+    errors.icon = "Add at least one emoji.";
+  } else if (countGraphemes(values.icon) > 3) {
+    errors.icon = "Use no more than 3 emojis.";
+  } else if (values.icon.length > HABIT_ICON_MAX_LENGTH) {
+    errors.icon = "Choose shorter emojis for this habit.";
   }
 
   if (!isHabitColor(values.color)) {

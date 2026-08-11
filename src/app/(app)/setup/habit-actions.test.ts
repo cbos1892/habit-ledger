@@ -6,7 +6,13 @@ import { redirect } from "next/navigation";
 import { requireCurrentUser } from "@/lib/auth/current-user";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-import { createHabit, updateHabit } from "./habit-actions";
+import {
+  archiveHabit,
+  createHabit,
+  moveHabit,
+  restoreHabit,
+  updateHabit,
+} from "./habit-actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -38,6 +44,12 @@ function habitFormData(
   ]) {
     data.append("weekdays", weekday);
   }
+  return data;
+}
+
+function managementFormData(habitId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa") {
+  const data = new FormData();
+  data.set("habitId", habitId);
   return data;
 }
 
@@ -120,5 +132,60 @@ describe("habit form actions", () => {
       values: { name: "Evening walk" },
     });
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("moves an owned habit and refreshes every ordered active view", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: "habit-123", error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
+    const data = managementFormData();
+    data.set("direction", "up");
+
+    await expect(moveHabit(data)).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(rpc).toHaveBeenCalledWith("move_habit", {
+      p_direction: "up",
+      p_habit_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+    expect(revalidatePath).toHaveBeenCalledWith("/setup");
+    expect(revalidatePath).toHaveBeenCalledWith("/today");
+    expect(revalidatePath).toHaveBeenCalledWith("/week");
+    expect(redirect).toHaveBeenCalledWith("/setup?habit=moved");
+  });
+
+  it("archives and restores only the identified owned habit", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: "habit-123", error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
+
+    await expect(archiveHabit(managementFormData())).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(rpc).toHaveBeenCalledWith("archive_habit", {
+      p_habit_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+
+    vi.clearAllMocks();
+    vi.mocked(requireCurrentUser).mockResolvedValue({ id: "user-123" });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
+
+    await expect(restoreHabit(managementFormData())).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(rpc).toHaveBeenCalledWith("restore_habit", {
+      p_habit_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+    expect(redirect).toHaveBeenCalledWith("/setup?habit=restored");
+  });
+
+  it("rejects malformed management inputs before persistence", async () => {
+    const invalidId = managementFormData("not-a-habit-id");
+    const invalidDirection = managementFormData();
+    invalidDirection.set("direction", "sideways");
+
+    await expect(archiveHabit(invalidId)).rejects.toThrow("Invalid habit");
+    await expect(moveHabit(invalidDirection)).rejects.toThrow(
+      "Invalid move direction",
+    );
+    expect(requireCurrentUser).not.toHaveBeenCalled();
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 });

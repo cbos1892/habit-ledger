@@ -3,14 +3,23 @@ import Link from "next/link";
 
 import { Card, Feedback } from "../../../components/ui";
 import { requireCurrentUser } from "../../../lib/auth/current-user";
-import { getActiveHabits } from "../../../lib/habits";
+import { getActiveHabits, getArchivedHabits } from "../../../lib/habits";
 import { getNavigationItem } from "../../../lib/navigation";
 import { getProfile } from "../../../lib/profile";
 
+import { archiveHabit, moveHabit, restoreHabit } from "./habit-actions";
+import { HabitList } from "./habit-list";
 import { TimeZoneForm } from "./time-zone-form";
 import styles from "./time-zone.module.css";
 
 const route = getNavigationItem("setup");
+const habitFeedbackTitles: Record<string, string> = {
+  archived: "Habit archived",
+  created: "Habit created",
+  moved: "Habit order updated",
+  restored: "Habit restored",
+  updated: "Habit updated",
+};
 
 export const metadata: Metadata = {
   title: route.label,
@@ -23,13 +32,17 @@ export default async function SetupPage({
   searchParams: Promise<{ habit?: string | string[] }>;
 }) {
   const user = await requireCurrentUser();
-  const [profile, habits, query] = await Promise.all([
+  const [profile, activeHabits, archivedHabits, query] = await Promise.all([
     getProfile(user.id),
     getActiveHabits(user.id),
+    getArchivedHabits(user.id),
     searchParams,
   ]);
   const isOnboarding = !profile.time_zone_confirmed_at;
   const habitStatus = Array.isArray(query.habit) ? query.habit[0] : query.habit;
+  const habitFeedbackTitle = habitStatus
+    ? habitFeedbackTitles[habitStatus]
+    : undefined;
 
   return (
     <section aria-labelledby="page-title" className={styles.settings}>
@@ -47,12 +60,13 @@ export default async function SetupPage({
         </p>
       </div>
 
-      {habitStatus === "created" || habitStatus === "updated" ? (
-        <Feedback
-          title={habitStatus === "created" ? "Habit created" : "Habit updated"}
-          tone="success"
-        >
-          <p>Your Setup list is up to date.</p>
+      {habitFeedbackTitle ? (
+        <Feedback title={habitFeedbackTitle} tone="success">
+          <p>
+            {habitStatus === "archived"
+              ? "The habit is out of active views, and its history is safe."
+              : "Your Setup list is up to date."}
+          </p>
         </Feedback>
       ) : null}
 
@@ -67,41 +81,13 @@ export default async function SetupPage({
           </Link>
         </div>
 
-        {habits.length > 0 ? (
-          <ul className={styles.habitList}>
-            {habits.map((habit) => (
-              <li key={habit.id}>
-                <Card className={styles.habitCard} padding="compact">
-                  <span className={styles.habitIcon} aria-hidden="true">
-                    {habit.icon}
-                  </span>
-                  <span className={styles.habitIdentity}>
-                    <span className={styles.habitName}>{habit.name}</span>
-                    <span className={styles.habitMeta}>
-                      Starts {habit.start_date}
-                    </span>
-                  </span>
-                  <span
-                    aria-label={`${habit.color} color`}
-                    className={styles.habitColor}
-                    data-color={habit.color}
-                    role="img"
-                  />
-                  <Link
-                    className={styles.editLink}
-                    href={`/setup/habits/${habit.id}/edit`}
-                  >
-                    Edit
-                  </Link>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <Card className={styles.emptyHabits} padding="compact">
-            <p>No habits yet. Create one small thing you want to return to.</p>
-          </Card>
-        )}
+        <HabitList
+          activeHabits={activeHabits}
+          archiveAction={archiveHabit}
+          archivedHabits={archivedHabits}
+          moveAction={moveHabit}
+          restoreAction={restoreHabit}
+        />
       </section>
 
       <Card className={styles.card}>

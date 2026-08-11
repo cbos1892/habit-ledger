@@ -118,6 +118,11 @@
   list-style: none;
 }
 
+.habitLists {
+  display: grid;
+  gap: var(--space-5);
+}
+
 .habitCard {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
@@ -126,13 +131,17 @@
 }
 
 .habitIcon {
-  display: grid;
-  width: 2.75rem;
+  display: inline-flex;
+  min-width: 2.75rem;
   height: 2.75rem;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-md);
   background: var(--color-surface-subtle);
+  padding-inline: var(--space-2);
   font-size: var(--text-xl);
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .habitIdentity {
@@ -181,6 +190,67 @@
   background: var(--color-accent-soft);
 }
 
+.habitControls,
+.moveControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.moveControls form,
+.habitControls form,
+.archivedHabitCard form {
+  display: flex;
+  margin: 0;
+}
+
+.archivedHabits {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.archivedHabits summary {
+  width: fit-content;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.archivedHabits summary:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.archivedHabits summary span {
+  display: inline-grid;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  margin-left: var(--space-1);
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-subtle);
+  font-size: var(--text-xs);
+}
+
+.archivedHabits[open] summary {
+  margin-bottom: var(--space-3);
+}
+
+.archivedHabitCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.emptyArchive {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 @media (max-width: 32rem) {
   .sectionHeading {
     align-items: stretch;
@@ -196,8 +266,19 @@
     grid-row: 1;
   }
 
-  .editLink {
+  .habitControls {
     grid-column: 1 / -1;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .archivedHabitCard {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .archivedHabitCard form {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
   }
 
   .primaryLink,
