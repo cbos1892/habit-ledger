@@ -16,6 +16,8 @@
     "test": "NODE_ENV=test vitest run",
     "test:watch": "NODE_ENV=test vitest",
     "test:db": "supabase test db",
+    "test:nav-perf": "playwright test --config playwright.navigation.config.ts",
+    "test:nav-perf:install": "playwright install chromium",
     "smoke:auth-isolation": "node scripts/auth-isolation-smoke.mjs",
     "types:generate": "supabase gen types --linked --lang typescript --schema public > src/types/database.ts",
     "format": "prettier --write .",
@@ -31,6 +33,7 @@
     "server-only": "0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
