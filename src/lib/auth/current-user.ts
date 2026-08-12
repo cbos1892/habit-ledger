@@ -12,17 +12,16 @@ export type CurrentUser = Readonly<{
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   try {
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getClaims();
+    const subject = data?.claims.sub;
 
-    if (error || !user) return null;
+    if (error || typeof subject !== "string" || subject.length === 0)
+      return null;
 
-    return Object.freeze({ id: user.id });
+    return Object.freeze({ id: subject });
   } catch {
-    // Authentication failures, including an unavailable Auth service, must
-    // fail closed rather than allowing a private route to render.
+    // JWT parsing, verification, refresh, and JWKS failures must all fail
+    // closed rather than allowing a private route to render.
     return null;
   }
 });
