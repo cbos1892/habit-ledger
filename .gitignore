@@ -3,6 +3,10 @@ node_modules/
 .pnpm-store/
 .next/
 coverage/
+artifacts/navigation-performance/
+playwright-report/
+test-results/
+.auth/
 *.tsbuildinfo
 next-env.d.ts
 

@@ -1,0 +1,67 @@
+name: Authenticated navigation performance
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Deployed preview or production URL
+        required: true
+        type: string
+      samples:
+        description: Samples per route and run type
+        required: false
+        default: "5"
+        type: string
+  workflow_call:
+    inputs:
+      base_url:
+        required: true
+        type: string
+      samples:
+        required: false
+        default: "5"
+        type: string
+    secrets:
+      NAV_PERF_SUPABASE_URL:
+        required: true
+      NAV_PERF_SUPABASE_PUBLISHABLE_KEY:
+        required: true
+      NAV_PERF_EMAIL:
+        required: true
+      NAV_PERF_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NAV_PERF_BASE_URL: ${{ inputs.base_url }}
+      NAV_PERF_SAMPLES: ${{ inputs.samples }}
+      NAV_PERF_SUPABASE_URL: ${{ secrets.NAV_PERF_SUPABASE_URL }}
+      NAV_PERF_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NAV_PERF_SUPABASE_PUBLISHABLE_KEY }}
+      NAV_PERF_EMAIL: ${{ secrets.NAV_PERF_EMAIL }}
+      NAV_PERF_PASSWORD: ${{ secrets.NAV_PERF_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:nav-perf
+      - name: Upload baseline report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-navigation-baseline
+          path: artifacts/navigation-performance/
+          if-no-files-found: warn
