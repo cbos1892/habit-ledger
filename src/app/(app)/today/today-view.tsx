@@ -17,9 +17,6 @@ type TodayViewProps = Readonly<{
 }>;
 
 type CompletionNotice = Readonly<{
-  habitId: string;
-  habitName: string;
-  tone: "success" | "error";
   message: string;
 }>;
 
@@ -113,20 +110,17 @@ export function TodayView({ today }: TodayViewProps) {
   useEffect(() => {
     if (!notice) return;
 
-    const timeout = window.setTimeout(
-      () => setNotice(null),
-      notice.tone === "success" ? 6000 : 8000,
-    );
+    const timeout = window.setTimeout(() => setNotice(null), 8000);
 
     return () => window.clearTimeout(timeout);
   }, [notice]);
 
-  function mutateCompletion(habitId: string, completed?: boolean) {
+  function mutateCompletion(habitId: string) {
     const habit = optimisticToday.habits.find(({ id }) => id === habitId);
 
     if (!habit) return;
 
-    const nextCompleted = completed ?? !habit.completed;
+    const nextCompleted = !habit.completed;
     const mutationId = ++mutationSequence.current;
     latestMutationByHabit.current.set(habitId, mutationId);
     setNotice(null);
@@ -150,23 +144,9 @@ export function TodayView({ today }: TodayViewProps) {
 
       if (result.status === "error") {
         setNotice({
-          habitId,
-          habitName: habit.name,
           message: result.message,
-          tone: "error",
         });
         return;
-      }
-
-      if (result.completed) {
-        setNotice({
-          habitId,
-          habitName: habit.name,
-          message: `${habit.name} is complete.`,
-          tone: "success",
-        });
-      } else {
-        setNotice(null);
       }
     });
   }
@@ -188,32 +168,16 @@ export function TodayView({ today }: TodayViewProps) {
       </header>
 
       {notice ? (
-        <div
-          className={styles.notice}
-          data-tone={notice.tone}
-          role={notice.tone === "error" ? "alert" : "status"}
-        >
+        <div className={styles.notice} role="alert">
           <span>{notice.message}</span>
-          <div className={styles.noticeActions}>
-            {notice.tone === "success" ? (
-              <button
-                className={styles.noticeButton}
-                type="button"
-                aria-label={`Undo completion for ${notice.habitName}`}
-                onClick={() => mutateCompletion(notice.habitId, false)}
-              >
-                Undo
-              </button>
-            ) : null}
-            <button
-              className={styles.noticeDismiss}
-              type="button"
-              aria-label={`Dismiss ${notice.tone} message`}
-              onClick={() => setNotice(null)}
-            >
-              ×
-            </button>
-          </div>
+          <button
+            className={styles.noticeDismiss}
+            type="button"
+            aria-label="Dismiss error message"
+            onClick={() => setNotice(null)}
+          >
+            ×
+          </button>
         </div>
       ) : null}
 

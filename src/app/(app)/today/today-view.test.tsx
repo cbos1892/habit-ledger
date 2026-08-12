@@ -58,7 +58,7 @@ describe("Today view", () => {
             {
               id: "b",
               name: "Read",
-              icon: "📚",
+              icon: "🌿📚✨",
               color: "plum",
               completed: false,
               completionId: null,
@@ -89,6 +89,7 @@ describe("Today view", () => {
     expect(
       screen.getByRole("button", { name: "Read, not complete" }),
     ).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("🌿📚✨")).toBeInTheDocument();
   });
 
   it("renders an encouraging empty state without a zero-value progress card", () => {
@@ -178,44 +179,32 @@ describe("Today view", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "previous check-in is restored",
     );
-    expect(
-      screen.getByRole("button", { name: "Morning walk, not complete" }),
-    ).toHaveAttribute("aria-pressed", "false");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Morning walk, not complete" }),
+      ).toHaveAttribute("aria-pressed", "false"),
+    );
   });
 
-  it("offers an undo action after a successful completion", async () => {
-    vi.mocked(setHabitCompletion)
-      .mockResolvedValueOnce({
-        status: "success",
-        habitId: readyToday.habits[0].id,
-        completed: true,
-        completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
-        localDate: "2026-08-10",
-      })
-      .mockResolvedValueOnce({
-        status: "success",
-        habitId: readyToday.habits[0].id,
-        completed: false,
-        completionId: null,
-        localDate: "2026-08-10",
-      });
+  it("does not show an undo action or success notice after completion", async () => {
+    vi.mocked(setHabitCompletion).mockResolvedValue({
+      status: "success",
+      habitId: readyToday.habits[0].id,
+      completed: true,
+      completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
+      localDate: "2026-08-10",
+    });
     render(<TodayView today={readyToday} />);
 
     fireEvent.click(
       screen.getByRole("button", { name: "Morning walk, not complete" }),
     );
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "Undo completion for Morning walk",
-      }),
-    );
 
-    await waitFor(() =>
-      expect(setHabitCompletion).toHaveBeenLastCalledWith(
-        readyToday.habits[0].id,
-        false,
-      ),
-    );
+    await waitFor(() => expect(setHabitCompletion).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /undo completion/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("turns rapid repeated taps into ordered, idempotent target states", async () => {

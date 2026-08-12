@@ -58,59 +58,34 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  border: 1px solid var(--color-success);
+  border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
-  background: var(--color-success-soft);
+  background: var(--color-danger-soft);
   padding: var(--space-3) var(--space-4);
-  color: var(--color-success);
+  color: var(--color-danger);
   font-size: var(--text-sm);
   font-weight: 700;
 }
 
-.notice[data-tone="error"] {
-  border-color: var(--color-danger);
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
-}
-
-.noticeActions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.noticeButton,
 .noticeDismiss {
+  width: 2.25rem;
   min-height: 2.25rem;
+  flex: 0 0 auto;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
   color: currentColor;
   font: inherit;
   font-weight: 800;
+  font-size: var(--text-lg);
+  line-height: 1;
   cursor: pointer;
 }
 
-.noticeButton {
-  padding: 0 var(--space-3);
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
-}
-
-.noticeDismiss {
-  width: 2.25rem;
-  padding: 0;
-  font-size: var(--text-lg);
-  line-height: 1;
-}
-
-.noticeButton:hover,
 .noticeDismiss:hover {
   background: color-mix(in srgb, currentColor 10%, transparent);
 }
 
-.noticeButton:focus-visible,
 .noticeDismiss:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
@@ -275,15 +250,24 @@
   gap: var(--space-3);
 }
 
+.habitIdentity {
+  min-width: 0;
+}
+
 .habitIcon {
   display: grid;
-  width: 3rem;
+  width: fit-content;
+  min-width: 3rem;
   height: 3rem;
   flex: 0 0 auto;
   place-items: center;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--habit-color) 16%, var(--color-surface));
-  font-size: var(--text-xl);
+  padding: 0 var(--space-2);
+  font-size: clamp(1.05rem, 4.5vw, var(--text-xl));
+  letter-spacing: -0.14em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .habitName {
