@@ -93,6 +93,21 @@ async function installPerformanceObservers(page: Page) {
   });
 }
 
+async function waitForClientNavigationReady(page: Page) {
+  await page.waitForLoadState("networkidle");
+  await expect(
+    page.locator('nav[aria-label="Primary navigation"]'),
+  ).toBeVisible();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolveReady) => {
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => resolveReady()),
+        );
+      }),
+  );
+}
+
 async function clickAndMeasure(page: Page, href: string, label: string) {
   return page.evaluate(
     ({ destination, destinationLabel }) =>
@@ -180,6 +195,7 @@ async function measureRun(page: Page, run: RunKind) {
   for (let iteration = 1; iteration <= sampleCount; iteration += 1) {
     await page.goto("/today", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/today$/);
+    await waitForClientNavigationReady(page);
     let from = "/today";
 
     for (const route of routes) {
@@ -276,6 +292,7 @@ test("records authenticated cold and warm navigation baselines", async ({
 
     if (run === "warm") {
       await page.goto("/today", { waitUntil: "domcontentloaded" });
+      await waitForClientNavigationReady(page);
       for (const route of routes)
         await clickAndMeasure(page, route.href, route.label);
     }
