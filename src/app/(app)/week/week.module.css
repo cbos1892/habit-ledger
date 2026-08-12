@@ -134,9 +134,9 @@
   position: sticky;
   left: 0;
   z-index: 2;
-  width: 9.5rem;
-  min-width: 9.5rem;
-  max-width: 9.5rem;
+  width: 5.5rem;
+  min-width: 5.5rem;
+  max-width: 5.5rem;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
   text-align: left;
@@ -177,26 +177,21 @@
   display: flex;
   min-width: 0;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
 }
 
 .habitIcon {
-  display: grid;
-  width: 2.25rem;
+  display: inline-flex;
+  min-width: 2.25rem;
   height: 2.25rem;
   flex: 0 0 auto;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--habit-color) 16%, var(--color-surface));
+  padding-inline: var(--space-2);
   font-size: var(--text-lg);
-}
-
-.habitName {
-  overflow: hidden;
-  font-size: var(--text-sm);
-  font-weight: 760;
-  line-height: var(--leading-tight);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -345,12 +340,6 @@
   .gridHeading {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
-  }
-  .cornerHeader,
-  .habitHeader {
-    width: 13rem;
-    min-width: 13rem;
-    max-width: 13rem;
   }
   .dayHeader,
   .cell {
