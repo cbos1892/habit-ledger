@@ -265,7 +265,6 @@
   background: color-mix(in srgb, var(--habit-color) 16%, var(--color-surface));
   padding: 0 var(--space-2);
   font-size: clamp(1.05rem, 4.5vw, var(--text-xl));
-  letter-spacing: -0.14em;
   line-height: 1;
   white-space: nowrap;
 }
