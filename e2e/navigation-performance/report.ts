@@ -15,6 +15,13 @@ export type NavigationSample = {
   cls: number;
   lcpMs: number | null;
   maxInteractionMs: number;
+  requestDetails?: {
+    path: string;
+    resourceType: string;
+    routerPrefetch: string | null;
+    segmentPrefetch: string | null;
+    purpose: string | null;
+  }[];
 };
 
 export type MetricSummary = {

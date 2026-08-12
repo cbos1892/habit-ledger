@@ -180,13 +180,24 @@ async function clickAndMeasure(page: Page, href: string, label: string) {
 
 async function measureRun(page: Page, run: RunKind) {
   const samples: NavigationSample[] = [];
-  const requests: { url: string; resourceType: string; at: number }[] = [];
+  const requests: {
+    url: string;
+    resourceType: string;
+    at: number;
+    routerPrefetch: string | null;
+    segmentPrefetch: string | null;
+    purpose: string | null;
+  }[] = [];
   const recordRequest = (request: Request) => {
     if (relevantRequest(request)) {
+      const headers = request.headers();
       requests.push({
         url: request.url(),
         resourceType: request.resourceType(),
         at: performance.now(),
+        routerPrefetch: headers["next-router-prefetch"] ?? null,
+        segmentPrefetch: headers["next-router-segment-prefetch"] ?? null,
+        purpose: headers.purpose ?? null,
       });
     }
   };
@@ -257,6 +268,13 @@ async function measureRun(page: Page, run: RunKind) {
         cls: Math.max(0, after.cls - before.cls),
         lcpMs: after.lcpMs,
         maxInteractionMs: after.maxInteractionMs,
+        requestDetails: navigationRequests.map((request) => ({
+          path: `${new URL(request.url).pathname}${new URL(request.url).search}`,
+          resourceType: request.resourceType,
+          routerPrefetch: request.routerPrefetch,
+          segmentPrefetch: request.segmentPrefetch,
+          purpose: request.purpose,
+        })),
       });
       from = route.href;
     }
