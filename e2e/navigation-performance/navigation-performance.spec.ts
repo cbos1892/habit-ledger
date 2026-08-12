@@ -94,10 +94,11 @@ async function installPerformanceObservers(page: Page) {
 }
 
 async function waitForClientNavigationReady(page: Page) {
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("load");
   await expect(
     page.locator('nav[aria-label="Primary navigation"]'),
   ).toBeVisible();
+  await page.waitForTimeout(250);
   await page.evaluate(
     () =>
       new Promise<void>((resolveReady) => {
