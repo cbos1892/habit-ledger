@@ -166,10 +166,12 @@ function HabitRow({
 
   return (
     <tr
+      className={styles.habitRow}
+      data-color={row.color}
       data-celebrating={celebratingRowIds.has(row.id)}
       data-complete={complete}
     >
-      <th className={styles.habitHeader} data-color={row.color} scope="row">
+      <th className={styles.habitHeader} scope="row">
         <span className={styles.habitIdentity}>
           <span className={styles.habitIcon} aria-hidden="true">
             {row.icon}
@@ -177,34 +179,19 @@ function HabitRow({
           <span className={styles.srOnly}>{row.name}</span>
           <span
             className={styles.rowProgress}
-            aria-label={`${progress.completed} of ${progress.total} scheduled days complete`}
+            role="progressbar"
+            aria-label={`${row.name} weekly progress`}
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+            aria-valuenow={progress.completed}
+            aria-valuetext={`${progress.completed} of ${progress.total} scheduled days complete`}
           >
-            <span className={styles.rowProgressCopy} aria-hidden="true">
-              <span>{complete ? "Week complete" : "Weekly progress"}</span>
-              <strong>
-                {progress.completed}/{progress.total}
-              </strong>
-            </span>
             <span
-              className={styles.rowProgressTrack}
-              role="progressbar"
-              aria-label={`${row.name} weekly progress`}
-              aria-valuemin={0}
-              aria-valuemax={progress.total}
-              aria-valuenow={progress.completed}
-            >
-              <span
-                className={styles.rowProgressFill}
-                style={{
-                  width: `${Math.round((progress.completed / progress.total) * 100)}%`,
-                }}
-              />
-            </span>
-            {complete ? (
-              <span className={styles.rowMilestone} aria-hidden="true">
-                ✓ Week
-              </span>
-            ) : null}
+              className={styles.rowProgressFill}
+              style={{
+                width: `${Math.round((progress.completed / progress.total) * 100)}%`,
+              }}
+            />
           </span>
         </span>
       </th>

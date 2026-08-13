@@ -177,12 +177,16 @@ describe("Week view", () => {
         name: /Morning walk, Wednesday, August 12, 2026, today, completed/,
       }),
     ).toBeDisabled();
-    expect(
-      screen.getByLabelText("2 of 4 scheduled days complete"),
-    ).toHaveTextContent("2/4");
-    expect(
-      screen.getByRole("progressbar", { name: "Morning walk weekly progress" }),
-    ).toHaveAttribute("aria-valuenow", "2");
+    const progress = screen.getByRole("progressbar", {
+      name: "Morning walk weekly progress",
+    });
+    expect(progress).toHaveAttribute("aria-valuenow", "2");
+    expect(progress).toHaveAttribute(
+      "aria-valuetext",
+      "2 of 4 scheduled days complete",
+    );
+    expect(progress).toHaveTextContent("");
+    expect(screen.queryByText(/weekly progress/i)).not.toBeInTheDocument();
     expect(setHabitCompletion).toHaveBeenCalledWith(
       "habit-a",
       true,
@@ -240,8 +244,8 @@ describe("Week view", () => {
       ).toHaveAttribute("aria-pressed", "false"),
     );
     expect(
-      screen.getByLabelText("1 of 4 scheduled days complete"),
-    ).toHaveTextContent("1/4");
+      screen.getByRole("progressbar", { name: "Morning walk weekly progress" }),
+    ).toHaveAttribute("aria-valuetext", "1 of 4 scheduled days complete");
   });
 
   it("marks completed rows and perfect scheduled days without replaying a celebration", () => {
@@ -265,6 +269,10 @@ describe("Week view", () => {
     expect(screen.getByRole("row", { name: /Morning walk/ })).toHaveAttribute(
       "data-complete",
       "true",
+    );
+    expect(screen.getByRole("row", { name: /Morning walk/ })).toHaveAttribute(
+      "data-color",
+      "fern",
     );
     expect(
       screen.getByRole("columnheader", {
