@@ -309,8 +309,7 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
-  const gridScrollerRef = useRef<HTMLDivElement>(null);
-  const headerScrollerRef = useRef<HTMLDivElement>(null);
+  const headerTrackRef = useRef<HTMLTableElement>(null);
   const rangeLabel = `${rangeDateFormatter.format(parseLocalDate(optimisticWeek.startDate))}–${rangeDateFormatter.format(parseLocalDate(optimisticWeek.endDate))}`;
   const currentWeekStart = getLocalWeekStartDate(
     optimisticWeek.currentLocalDate,
@@ -537,31 +536,29 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
               className={styles.stickyGridHeader}
               data-sticky-week-header="true"
             >
-              <div
-                className={styles.stickyHeaderScroller}
-                onScroll={(event) => {
-                  if (gridScrollerRef.current) {
-                    gridScrollerRef.current.scrollLeft =
-                      event.currentTarget.scrollLeft;
-                  }
-                }}
-                ref={headerScrollerRef}
-              >
-                <table className={styles.grid}>
-                  <thead>
-                    <tr>
-                      <th className={styles.cornerHeader} scope="col">
-                        Habit
-                      </th>
-                      <DayHeaders
-                        celebration={celebration}
-                        currentLocalDate={optimisticWeek.currentLocalDate}
-                        localDates={optimisticWeek.localDates}
-                        perfectDayDates={perfectDayDates}
-                      />
-                    </tr>
-                  </thead>
-                </table>
+              <div className={styles.stickyHeaderSurface}>
+                <div className={styles.stickyHeaderViewport}>
+                  <table
+                    className={`${styles.grid} ${styles.stickyHeaderTrack}`}
+                    data-week-header-track="true"
+                    ref={headerTrackRef}
+                  >
+                    <thead>
+                      <tr>
+                        <th className={styles.cornerHeader} scope="col">
+                          Habit
+                        </th>
+                        <DayHeaders
+                          celebration={celebration}
+                          currentLocalDate={optimisticWeek.currentLocalDate}
+                          localDates={optimisticWeek.localDates}
+                          perfectDayDates={perfectDayDates}
+                        />
+                      </tr>
+                    </thead>
+                  </table>
+                </div>
+                <div className={styles.stickyCornerOverlay}>Habit</div>
               </div>
             </div>
             <div
@@ -569,12 +566,11 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
               role="region"
               aria-label="Scrollable weekly habit grid"
               onScroll={(event) => {
-                if (headerScrollerRef.current) {
-                  headerScrollerRef.current.scrollLeft =
-                    event.currentTarget.scrollLeft;
-                }
+                headerTrackRef.current?.style.setProperty(
+                  "--week-scroll-offset",
+                  `${-event.currentTarget.scrollLeft}px`,
+                );
               }}
-              ref={gridScrollerRef}
               tabIndex={0}
             >
               <table className={styles.grid}>
