@@ -4,6 +4,8 @@ import {
   addLocalDateDays,
   getBrowserTimeZone,
   getLocalWeekDateKeys,
+  getLocalWeekDateKeysFromDate,
+  getLocalWeekStartDate,
   isSupportedTimeZone,
   toLocalDateKey,
 } from "./time-zone";
@@ -57,5 +59,28 @@ describe("time-zone utilities", () => {
       "2026-08-08",
       "2026-08-09",
     ]);
+  });
+
+  it("derives week boundaries directly from local calendar dates", () => {
+    expect(getLocalWeekStartDate("2026-01-01")).toBe("2025-12-29");
+    expect(getLocalWeekDateKeysFromDate("2026-03-08")).toEqual([
+      "2026-03-02",
+      "2026-03-03",
+      "2026-03-04",
+      "2026-03-05",
+      "2026-03-06",
+      "2026-03-07",
+      "2026-03-08",
+    ]);
+    expect(getLocalWeekStartDate("2026-01-01", 0)).toBe("2025-12-28");
+  });
+
+  it("rejects invalid local dates before deriving week boundaries", () => {
+    expect(() => getLocalWeekStartDate("2026-02-30")).toThrow(
+      "Invalid local date",
+    );
+    expect(() => getLocalWeekDateKeysFromDate("not-a-date")).toThrow(
+      "Invalid local date",
+    );
   });
 });

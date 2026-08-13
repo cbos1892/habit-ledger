@@ -6,7 +6,11 @@ import {
   type IsoWeekday,
 } from "@/lib/habit-schedule";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getLocalWeekDateKeys, toLocalDateKey } from "@/lib/time-zone";
+import {
+  getLocalWeekDateKeysFromDate,
+  getLocalWeekStartDate,
+  toLocalDateKey,
+} from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
 type WeeklyHabitIdentity = Pick<
@@ -49,6 +53,12 @@ export type WeeklyViewModel =
         rows: readonly WeeklyHabitRow[];
         status: "ready";
       }>);
+
+export type WeeklyViewOptions = Readonly<{
+  instant?: Date | number | string;
+  selectedWeekStart?: string;
+  weekStartsOn?: 0 | 1;
+}>;
 
 const weeklyHabitSelection =
   "id, name, icon, color, start_date, archived_at, display_order, habit_schedules(weekday), completions(id, local_date)" as const;
@@ -127,12 +137,30 @@ function createCell(
 export async function getWeeklyViewModel(
   ownerId: string,
   timeZone: string,
-  instant: Date | number | string = new Date(),
-  weekStartsOn: 0 | 1 = 1,
+  options: WeeklyViewOptions = {},
 ): Promise<WeeklyViewModel> {
-  const localDates = getLocalWeekDateKeys(instant, timeZone, weekStartsOn);
+  const { instant = new Date(), selectedWeekStart, weekStartsOn = 1 } = options;
   const currentLocalDate = toLocalDateKey(instant, timeZone);
-  const startDate = localDates[0];
+  const currentWeekStart = getLocalWeekStartDate(
+    currentLocalDate,
+    weekStartsOn,
+  );
+  let startDate = currentWeekStart;
+
+  if (selectedWeekStart && selectedWeekStart <= currentWeekStart) {
+    try {
+      if (
+        getLocalWeekStartDate(selectedWeekStart, weekStartsOn) ===
+        selectedWeekStart
+      ) {
+        startDate = selectedWeekStart;
+      }
+    } catch {
+      // Invalid URL values deliberately fall back to the current local week.
+    }
+  }
+
+  const localDates = getLocalWeekDateKeysFromDate(startDate, weekStartsOn);
   const endDate = localDates[6];
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase

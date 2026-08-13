@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
 
 import type {
@@ -7,6 +8,7 @@ import type {
   WeeklyHabitRow,
   WeeklyViewModel,
 } from "@/lib/week";
+import { addLocalDateDays, getLocalWeekStartDate } from "@/lib/time-zone";
 
 import { setHabitCompletion } from "./completion-actions";
 import styles from "./week.module.css";
@@ -201,6 +203,13 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const rangeLabel = `${rangeDateFormatter.format(parseLocalDate(optimisticWeek.startDate))}–${rangeDateFormatter.format(parseLocalDate(optimisticWeek.endDate))}`;
+  const currentWeekStart = getLocalWeekStartDate(
+    optimisticWeek.currentLocalDate,
+    optimisticWeek.weekStartsOn,
+  );
+  const previousWeekStart = addLocalDateDays(optimisticWeek.startDate, -7);
+  const nextWeekStart = addLocalDateDays(optimisticWeek.startDate, 7);
+  const isCurrentWeek = optimisticWeek.startDate === currentWeekStart;
 
   useEffect(() => {
     if (!notice) return;
@@ -256,6 +265,39 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
             Week
           </h1>
           <p className={styles.dateRange}>{rangeLabel}</p>
+          <nav className={styles.weekNavigation} aria-label="Week navigation">
+            <Link
+              className={styles.weekNavigationLink}
+              href={`/week?week=${previousWeekStart}`}
+              scroll={false}
+            >
+              <span aria-hidden="true">←</span> Previous
+            </Link>
+            <Link
+              aria-current={isCurrentWeek ? "date" : undefined}
+              className={styles.weekNavigationLink}
+              href="/week"
+              scroll={false}
+            >
+              This week
+            </Link>
+            {isCurrentWeek ? (
+              <span
+                aria-disabled="true"
+                className={styles.weekNavigationDisabled}
+              >
+                Next <span aria-hidden="true">→</span>
+              </span>
+            ) : (
+              <Link
+                className={styles.weekNavigationLink}
+                href={`/week?week=${nextWeekStart}`}
+                scroll={false}
+              >
+                Next <span aria-hidden="true">→</span>
+              </Link>
+            )}
+          </nav>
         </div>
         {optimisticWeek.status === "ready" ? (
           <p className={styles.summary}>

@@ -46,11 +46,9 @@ describe("weekly view model", () => {
       error: null,
     });
 
-    const result = await getWeeklyViewModel(
-      "user-123",
-      "America/New_York",
-      "2026-08-06T02:30:00.000Z",
-    );
+    const result = await getWeeklyViewModel("user-123", "America/New_York", {
+      instant: "2026-08-06T02:30:00.000Z",
+    });
 
     expect(result.localDates).toEqual([
       "2026-08-03",
@@ -151,11 +149,9 @@ describe("weekly view model", () => {
       error: null,
     });
 
-    const result = await getWeeklyViewModel(
-      "user-123",
-      "America/New_York",
-      "2026-08-05T18:00:00.000Z",
-    );
+    const result = await getWeeklyViewModel("user-123", "America/New_York", {
+      instant: "2026-08-05T18:00:00.000Z",
+    });
 
     expect(result.rows.map(({ id }) => id)).toEqual([
       "archived-relevant",
@@ -173,12 +169,10 @@ describe("weekly view model", () => {
   it("uses one range-bounded database request for the whole grid", async () => {
     finalOrder.mockResolvedValue({ data: [], error: null });
 
-    const result = await getWeeklyViewModel(
-      "user-123",
-      "UTC",
-      "2026-08-05T12:00:00.000Z",
-      0,
-    );
+    const result = await getWeeklyViewModel("user-123", "UTC", {
+      instant: "2026-08-05T12:00:00.000Z",
+      weekStartsOn: 0,
+    });
 
     expect(result).toEqual({
       currentLocalDate: "2026-08-05",
@@ -232,11 +226,9 @@ describe("weekly view model", () => {
       error: null,
     });
 
-    const result = await getWeeklyViewModel(
-      "user-123",
-      "UTC",
-      "2026-08-03T12:00:00.000Z",
-    );
+    const result = await getWeeklyViewModel("user-123", "UTC", {
+      instant: "2026-08-03T12:00:00.000Z",
+    });
 
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.localDates)).toBe(true);
@@ -253,7 +245,43 @@ describe("weekly view model", () => {
     });
 
     await expect(
-      getWeeklyViewModel("user-123", "UTC", "2026-08-03T12:00:00.000Z"),
+      getWeeklyViewModel("user-123", "UTC", {
+        instant: "2026-08-03T12:00:00.000Z",
+      }),
     ).rejects.toThrow("Unable to load the weekly habits.");
   });
+
+  it("loads a valid historical start date without local-time drift", async () => {
+    finalOrder.mockResolvedValue({ data: [], error: null });
+
+    const result = await getWeeklyViewModel("user-123", "Pacific/Kiritimati", {
+      instant: "2026-03-10T12:00:00.000Z",
+      selectedWeekStart: "2026-03-02",
+    });
+
+    expect(result.localDates).toEqual([
+      "2026-03-02",
+      "2026-03-03",
+      "2026-03-04",
+      "2026-03-05",
+      "2026-03-06",
+      "2026-03-07",
+      "2026-03-08",
+    ]);
+  });
+
+  it.each(["2026-03-03", "2026-02-30", "not-a-date", "2026-03-16"])(
+    "falls back to the current week for unsupported URL value %s",
+    async (selectedWeekStart) => {
+      finalOrder.mockResolvedValue({ data: [], error: null });
+
+      const result = await getWeeklyViewModel("user-123", "UTC", {
+        instant: "2026-03-10T12:00:00.000Z",
+        selectedWeekStart,
+      });
+
+      expect(result.startDate).toBe("2026-03-09");
+      expect(result.endDate).toBe("2026-03-15");
+    },
+  );
 });

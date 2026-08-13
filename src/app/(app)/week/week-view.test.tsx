@@ -77,6 +77,51 @@ describe("Week view", () => {
     ).toHaveAttribute("tabindex", "0");
   });
 
+  it("links to adjacent local weeks and prevents future-week navigation", () => {
+    render(<WeekView week={week} />);
+
+    expect(screen.getByRole("link", { name: "Previous" })).toHaveAttribute(
+      "href",
+      "/week?week=2026-08-03",
+    );
+    expect(screen.getByRole("link", { name: "This week" })).toHaveAttribute(
+      "href",
+      "/week",
+    );
+    expect(screen.getByText("Next", { exact: false })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+
+  it("allows a historical week to move forward by one calendar week", () => {
+    render(
+      <WeekView
+        week={{
+          ...week,
+          endDate: "2026-08-09",
+          localDates: [
+            "2026-08-03",
+            "2026-08-04",
+            "2026-08-05",
+            "2026-08-06",
+            "2026-08-07",
+            "2026-08-08",
+            "2026-08-09",
+          ],
+          rows: [],
+          startDate: "2026-08-03",
+          status: "empty",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute(
+      "href",
+      "/week?week=2026-08-10",
+    );
+  });
+
   it("exposes completed, incomplete, today, future, and unscheduled labels", () => {
     render(<WeekView week={week} />);
 
