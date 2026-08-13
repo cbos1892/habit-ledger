@@ -61,7 +61,7 @@ function Progress({ completed, total }: { completed: number; total: number }) {
   return (
     <section className={styles.progress} aria-labelledby="today-progress-title">
       <div className={styles.progressCopy}>
-        <div>
+        <div className={styles.progressText}>
           <p className={styles.progressLabel} id="today-progress-title">
             Daily progress
           </p>
