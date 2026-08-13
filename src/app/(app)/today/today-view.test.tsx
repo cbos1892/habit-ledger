@@ -83,6 +83,12 @@ describe("Today view", () => {
       "aria-valuemax",
       "2",
     );
+    expect(screen.getByRole("progressbar")).toHaveAccessibleName(
+      "Habits completed today",
+    );
+    expect(
+      screen.getByText("A little progress is still progress."),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Morning walk, complete" }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -90,6 +96,33 @@ describe("Today view", () => {
       screen.getByRole("button", { name: "Read, not complete" }),
     ).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByText("🌿📚✨")).toBeInTheDocument();
+  });
+
+  it("keeps the completed progress state encouraging and accessible", () => {
+    render(
+      <TodayView
+        today={{
+          ...readyToday,
+          completedCount: 1,
+          habits: [
+            {
+              ...readyToday.habits[0],
+              completed: true,
+              completionId: "c1",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText("All done for today. Nicely tended."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "1",
+    );
+    expect(screen.getByLabelText("1 of 1 habits complete")).toBeInTheDocument();
   });
 
   it("renders an encouraging empty state without a zero-value progress card", () => {

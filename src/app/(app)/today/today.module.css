@@ -92,30 +92,36 @@
 
 .progress {
   display: grid;
-  gap: var(--space-5);
-  border: 1px solid
-    color-mix(in srgb, var(--color-success) 28%, var(--color-border));
-  border-radius: var(--radius-xl);
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   background: linear-gradient(
     135deg,
     var(--color-surface),
-    var(--color-success-soft)
+    color-mix(in srgb, var(--color-surface-subtle) 72%, var(--color-surface))
   );
-  box-shadow: var(--shadow-sm);
-  padding: clamp(var(--space-5), 5vw, var(--space-8));
+  box-shadow:
+    inset 0 0.2rem var(--color-accent),
+    var(--shadow-sm);
+  padding: clamp(var(--space-3), 3vw, var(--space-4));
 }
 
 .progressCopy {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+.progressText {
+  min-width: 0;
 }
 
 .progressMessage {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  line-height: var(--leading-normal);
 }
 
 .progressCount {
@@ -126,28 +132,25 @@
 }
 
 .progressCount strong {
-  color: var(--color-success);
+  color: var(--color-accent-hover);
   font-family: var(--font-display);
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 500;
+  line-height: 1;
 }
 
 .progressTrack {
   overflow: hidden;
-  height: 0.55rem;
+  height: 0.4rem;
   border-radius: var(--radius-pill);
-  background: color-mix(
-    in srgb,
-    var(--color-success) 18%,
-    var(--color-surface)
-  );
+  background: var(--color-accent-soft);
 }
 
 .progressFill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--color-success);
+  background: var(--color-accent);
   transition: width var(--duration-normal) var(--ease-standard);
 }
 
