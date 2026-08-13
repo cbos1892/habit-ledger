@@ -33,8 +33,7 @@
   line-height: 0.9;
 }
 
-.date,
-.loadingCopy {
+.date {
   margin: var(--space-4) 0 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -300,8 +299,7 @@
 }
 
 .empty,
-.error,
-.loadingPanel {
+.error {
   display: grid;
   min-height: 22rem;
   place-items: center;
@@ -388,32 +386,6 @@
   outline-offset: 3px;
 }
 
-.loadingPanel {
-  gap: var(--space-4);
-  align-content: start;
-}
-
-.loadingLine {
-  display: block;
-  width: 100%;
-  min-height: 5.75rem;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(
-    100deg,
-    var(--color-surface-subtle) 20%,
-    var(--color-surface-raised) 45%,
-    var(--color-surface-subtle) 70%
-  );
-  background-size: 220% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  to {
-    background-position-x: -220%;
-  }
-}
-
 @media (min-width: 36rem) {
   .summary {
     display: block;
@@ -427,8 +399,5 @@
   .habitCard,
   .progressFill {
     transition: none;
-  }
-  .loadingLine {
-    animation: none;
   }
 }

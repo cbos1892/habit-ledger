@@ -121,6 +121,8 @@ async function clickAndMeasure(page: Page, href: string, label: string) {
           const now = performance.now();
           const active = link.getAttribute("aria-current") === "page";
           const contentChanged = main.textContent !== originalContent;
+          const linkPending = link.querySelector('[data-pending="true"]');
+          const routeLoading = main.querySelector("[data-route-loading]");
           const atDestination = window.location.pathname === destination;
           const headingMatches = [...main.querySelectorAll("h1")].some(
             (heading) => {
@@ -132,7 +134,10 @@ async function clickAndMeasure(page: Page, href: string, label: string) {
             },
           );
 
-          if (feedbackAt === null && (active || contentChanged))
+          if (
+            feedbackAt === null &&
+            (linkPending || routeLoading || active || contentChanged)
+          )
             feedbackAt = now;
 
           if (atDestination && headingMatches) {

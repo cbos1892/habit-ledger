@@ -116,8 +116,10 @@ describe("Today view", () => {
     const retry = vi.fn();
     const { unmount } = render(<TodayLoading />);
 
-    expect(screen.getByText("Gathering your habits…")).toBeInTheDocument();
-    expect(screen.getByLabelText("Loading today's habits")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Gathering today's habits…",
+    );
+    expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
     unmount();
 
     render(<TodayError error={new Error("offline")} retry={retry} />);
