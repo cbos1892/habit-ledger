@@ -6,6 +6,8 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { WeeklyViewModel } from "@/lib/week";
@@ -121,6 +123,83 @@ describe("Week view", () => {
       "/week?week=2026-08-10",
     );
   });
+
+  it.each([
+    {
+      endDate: "2026-01-04",
+      localDates: [
+        "2025-12-29",
+        "2025-12-30",
+        "2025-12-31",
+        "2026-01-01",
+        "2026-01-02",
+        "2026-01-03",
+        "2026-01-04",
+      ],
+      next: "2026-01-05",
+      previous: "2025-12-22",
+      startDate: "2025-12-29",
+      boundary: "year",
+    },
+    {
+      endDate: "2026-03-08",
+      localDates: [
+        "2026-03-02",
+        "2026-03-03",
+        "2026-03-04",
+        "2026-03-05",
+        "2026-03-06",
+        "2026-03-07",
+        "2026-03-08",
+      ],
+      next: "2026-03-09",
+      previous: "2026-02-23",
+      startDate: "2026-03-02",
+      boundary: "daylight-saving",
+    },
+    {
+      endDate: "2026-09-06",
+      localDates: [
+        "2026-08-31",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-05",
+        "2026-09-06",
+      ],
+      next: "2026-09-07",
+      previous: "2026-08-24",
+      startDate: "2026-08-31",
+      boundary: "month",
+    },
+  ])(
+    "keeps navigation on local calendar dates across a $boundary boundary",
+    ({ endDate, localDates, next, previous, startDate }) => {
+      render(
+        <WeekView
+          week={{
+            ...week,
+            currentLocalDate: "2026-10-15",
+            endDate,
+            localDates,
+            rows: [],
+            startDate,
+            status: "empty",
+          }}
+        />,
+      );
+
+      expect(screen.getByRole("link", { name: "Previous" })).toHaveAttribute(
+        "href",
+        `/week?week=${previous}`,
+      );
+      expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute(
+        "href",
+        `/week?week=${next}`,
+      );
+    },
+  );
 
   it("exposes completed, incomplete, today, future, and unscheduled labels", () => {
     render(<WeekView week={week} />);
@@ -340,6 +419,55 @@ describe("Week view", () => {
         "habit-a",
         true,
         "2026-08-11",
+      ),
+    );
+  });
+
+  it("has no detectable structural accessibility violations", async () => {
+    const { container } = render(<WeekView week={week} />);
+
+    const results = await axe.run(container, {
+      rules: {
+        // JSDOM does not calculate the rendered colors needed by this rule.
+        "color-contrast": { enabled: false },
+      },
+    });
+
+    expect(results.violations.map(({ id }) => id)).toEqual([]);
+  });
+
+  it("supports keyboard traversal and activation of editable cells", async () => {
+    const user = userEvent.setup();
+    vi.mocked(setHabitCompletion).mockResolvedValue({
+      status: "success",
+      habitId: "habit-a",
+      completed: false,
+      completionId: null,
+      localDate: "2026-08-10",
+    });
+    render(<WeekView week={week} />);
+
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Previous" })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "This week" })).toHaveFocus();
+    await user.tab();
+    expect(
+      screen.getByRole("region", { name: "Scrollable weekly habit grid" }),
+    ).toHaveFocus();
+    await user.tab();
+
+    const firstEditableCell = screen.getByRole("button", {
+      name: /Morning walk, Monday, August 10, 2026, completed/,
+    });
+    expect(firstEditableCell).toHaveFocus();
+    await user.keyboard(" ");
+
+    await waitFor(() =>
+      expect(setHabitCompletion).toHaveBeenCalledWith(
+        "habit-a",
+        false,
+        "2026-08-10",
       ),
     );
   });

@@ -107,6 +107,61 @@ describe("weekly view model", () => {
     });
   });
 
+  it("handles daily, selected-weekday, and midweek-start schedules together", async () => {
+    finalOrder.mockResolvedValue({
+      data: [
+        {
+          id: "daily-midweek",
+          name: "Journal",
+          icon: "✍️",
+          color: "sun",
+          display_order: 10,
+          start_date: "2026-08-05",
+          archived_at: null,
+          habit_schedules: Array.from({ length: 7 }, (_, index) => ({
+            weekday: index + 1,
+          })),
+          completions: [{ id: "journal-wednesday", local_date: "2026-08-05" }],
+        },
+        {
+          id: "selected-days",
+          name: "Strength training",
+          icon: "🏋️",
+          color: "plum",
+          display_order: 20,
+          start_date: "2026-08-01",
+          archived_at: null,
+          habit_schedules: [{ weekday: 2 }, { weekday: 4 }],
+          completions: [],
+        },
+      ],
+      error: null,
+    });
+
+    const result = await getWeeklyViewModel("user-123", "America/New_York", {
+      instant: "2026-08-06T18:00:00.000Z",
+    });
+
+    expect(result.rows[0]?.cells.map(({ state }) => state)).toEqual([
+      "not-scheduled",
+      "not-scheduled",
+      "completed",
+      "incomplete",
+      "incomplete",
+      "incomplete",
+      "incomplete",
+    ]);
+    expect(result.rows[1]?.cells.map(({ state }) => state)).toEqual([
+      "not-scheduled",
+      "incomplete",
+      "not-scheduled",
+      "incomplete",
+      "not-scheduled",
+      "not-scheduled",
+      "not-scheduled",
+    ]);
+  });
+
   it("includes archived habits only on relevant historical dates", async () => {
     finalOrder.mockResolvedValue({
       data: [
