@@ -17,6 +17,7 @@ const habitId = "4d91111d-df1b-41f7-917f-a67a6ec1e20d";
 const completionId = "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e";
 
 function createSupabaseMock({
+  archivedAt = null as string | null,
   completion = { id: completionId } as { id: string } | null,
   mutationError = null as { message: string } | null,
 } = {}) {
@@ -24,6 +25,7 @@ function createSupabaseMock({
     data: {
       id: habitId,
       start_date: "2026-08-01",
+      archived_at: archivedAt,
       habit_schedules: [{ weekday: 1 }],
     },
     error: null,
@@ -32,10 +34,11 @@ function createSupabaseMock({
     select: vi.fn(),
     eq: vi.fn(),
     is: vi.fn(),
+    maybeSingle: habitMaybeSingle,
   };
   habitQuery.select.mockReturnValue(habitQuery);
   habitQuery.eq.mockReturnValue(habitQuery);
-  habitQuery.is.mockReturnValue({ maybeSingle: habitMaybeSingle });
+  habitQuery.is.mockReturnValue(habitQuery);
 
   const upsert = vi.fn().mockResolvedValue({ error: mutationError });
   const deleteDateEq = vi.fn().mockResolvedValue({ error: mutationError });
@@ -146,6 +149,57 @@ describe("Today completion actions", () => {
     });
     expect(mock.completionSelect).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("writes an explicit eligible past local date for the weekly grid", async () => {
+    const mock = createSupabaseMock({
+      archivedAt: "2026-08-05T17:00:00.000Z",
+    });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue(
+      mock.client as never,
+    );
+
+    await expect(
+      setHabitCompletion(habitId, true, "2026-08-03"),
+    ).resolves.toMatchObject({
+      status: "success",
+      localDate: "2026-08-03",
+    });
+    expect(mock.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ local_date: "2026-08-03" }),
+      expect.anything(),
+    );
+  });
+
+  it("rejects future and unscheduled explicit dates", async () => {
+    const mock = createSupabaseMock();
+    vi.mocked(createServerSupabaseClient).mockResolvedValue(
+      mock.client as never,
+    );
+
+    await expect(
+      setHabitCompletion(habitId, true, "2026-08-11"),
+    ).resolves.toMatchObject({ status: "error" });
+    await expect(
+      setHabitCompletion(habitId, true, "2026-08-09"),
+    ).resolves.toMatchObject({ status: "error" });
+
+    expect(mock.upsert).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("rejects edits after a habit's local archive date", async () => {
+    const mock = createSupabaseMock({
+      archivedAt: "2026-08-02T17:00:00.000Z",
+    });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue(
+      mock.client as never,
+    );
+
+    await expect(
+      setHabitCompletion(habitId, true, "2026-08-03"),
+    ).resolves.toMatchObject({ status: "error" });
+    expect(mock.upsert).not.toHaveBeenCalled();
   });
 
   it("rejects malformed habit IDs before authentication or database access", async () => {

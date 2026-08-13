@@ -2,7 +2,11 @@
 
 import { refresh } from "next/cache";
 
-import { isHabitScheduledAt, isIsoWeekday } from "@/lib/habit-schedule";
+import {
+  getIsoWeekday,
+  isHabitScheduledOnDate,
+  isIsoWeekday,
+} from "@/lib/habit-schedule";
 import { requireTimeZoneContext } from "@/lib/profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toLocalDateKey } from "@/lib/time-zone";
@@ -31,37 +35,58 @@ const persistenceFailure = (): CompletionActionResult => ({
 export async function setHabitCompletion(
   habitId: string,
   completed: boolean,
+  requestedLocalDate?: string,
 ): Promise<CompletionActionResult> {
-  if (!habitIdPattern.test(habitId) || typeof completed !== "boolean") {
+  if (
+    !habitIdPattern.test(habitId) ||
+    typeof completed !== "boolean" ||
+    (requestedLocalDate !== undefined && typeof requestedLocalDate !== "string")
+  ) {
     return persistenceFailure();
   }
 
   const profile = await requireTimeZoneContext();
   const instant = new Date();
-  const localDate = toLocalDateKey(instant, profile.time_zone);
+  const currentLocalDate = toLocalDateKey(instant, profile.time_zone);
+  const localDate = requestedLocalDate ?? currentLocalDate;
+
+  try {
+    getIsoWeekday(localDate);
+  } catch {
+    return persistenceFailure();
+  }
+
+  if (localDate > currentLocalDate) return persistenceFailure();
 
   try {
     const supabase = await createServerSupabaseClient();
     const { data: habit, error: habitError } = await supabase
       .from("habits")
-      .select("id, start_date, habit_schedules(weekday)")
+      .select("id, start_date, archived_at, habit_schedules(weekday)")
       .eq("id", habitId)
       .eq("owner_id", profile.id)
-      .is("archived_at", null)
       .maybeSingle();
+
+    const archivedLocalDate = habit?.archived_at
+      ? toLocalDateKey(habit.archived_at, profile.time_zone)
+      : null;
+    const activeOnTargetDate =
+      requestedLocalDate === undefined
+        ? archivedLocalDate === null
+        : archivedLocalDate === null || localDate <= archivedLocalDate;
 
     if (
       habitError ||
       !habit ||
-      !isHabitScheduledAt(
+      !activeOnTargetDate ||
+      !isHabitScheduledOnDate(
         {
           startDate: habit.start_date,
           weekdays: habit.habit_schedules
             .map(({ weekday }) => weekday)
             .filter(isIsoWeekday),
         },
-        instant,
-        profile.time_zone,
+        localDate,
       )
     ) {
       return persistenceFailure();
