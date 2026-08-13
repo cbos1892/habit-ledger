@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 
 import { primaryNavigation, type NavigationIcon } from "../../lib/navigation";
@@ -53,6 +53,22 @@ function NavigationGlyph({ name }: { name: NavigationIcon }) {
   );
 }
 
+function NavigationPendingIndicator({ label }: { label: string }) {
+  const { pending } = useLinkStatus();
+
+  return (
+    <span
+      className="nav-pending-indicator"
+      data-pending={pending ? "true" : "false"}
+    >
+      <span className="nav-pending-dot" aria-hidden="true" />
+      <span className="nav-pending-status" role="status">
+        {pending ? `Loading ${label}` : ""}
+      </span>
+    </span>
+  );
+}
+
 export function PrimaryNavigation() {
   const activeSegment = useSelectedLayoutSegment();
 
@@ -66,11 +82,13 @@ export function PrimaryNavigation() {
             <li key={item.href}>
               <Link
                 aria-current={isActive ? "page" : undefined}
+                aria-label={item.label}
                 className="primary-nav-link"
                 href={item.href}
               >
                 <NavigationGlyph name={item.icon} />
                 <span>{item.label}</span>
+                <NavigationPendingIndicator label={item.label} />
               </Link>
             </li>
           );
