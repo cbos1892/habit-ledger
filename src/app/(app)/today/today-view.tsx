@@ -103,9 +103,24 @@ export function TodayView({ today }: TodayViewProps) {
   );
   const [, startTransition] = useTransition();
   const [notice, setNotice] = useState<CompletionNotice | null>(null);
+  const [showScrollFade, setShowScrollFade] = useState(false);
   const latestMutationByHabit = useRef(new Map<string, number>());
   const mutationSequence = useRef(0);
+  const stickySentinelRef = useRef<HTMLDivElement>(null);
   const dateLabel = formatLocalDate(optimisticToday.localDate);
+  const completionNotice = notice ? (
+    <div className={styles.notice} role="alert">
+      <span>{notice.message}</span>
+      <button
+        className={styles.noticeDismiss}
+        type="button"
+        aria-label="Dismiss error message"
+        onClick={() => setNotice(null)}
+      >
+        ×
+      </button>
+    </div>
+  ) : null;
 
   useEffect(() => {
     if (!notice) return;
@@ -114,6 +129,20 @@ export function TodayView({ today }: TodayViewProps) {
 
     return () => window.clearTimeout(timeout);
   }, [notice]);
+
+  useEffect(() => {
+    const sentinel = stickySentinelRef.current;
+
+    if (!sentinel || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowScrollFade(!entry.isIntersecting);
+    });
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, []);
 
   function mutateCompletion(habitId: string) {
     const habit = optimisticToday.habits.find(({ id }) => id === habitId);
@@ -167,77 +196,73 @@ export function TodayView({ today }: TodayViewProps) {
         ) : null}
       </header>
 
-      {notice ? (
-        <div className={styles.notice} role="alert">
-          <span>{notice.message}</span>
-          <button
-            className={styles.noticeDismiss}
-            type="button"
-            aria-label="Dismiss error message"
-            onClick={() => setNotice(null)}
-          >
-            ×
-          </button>
-        </div>
-      ) : null}
-
       {optimisticToday.status === "empty" ? (
-        <section className={styles.empty} aria-labelledby="empty-title">
-          <span className={styles.emptyIcon} aria-hidden="true">
-            ☀️
-          </span>
-          <p className={styles.emptyEyebrow}>An open day</p>
-          <h2 className={styles.emptyTitle} id="empty-title">
-            Nothing is scheduled for today.
-          </h2>
-          <p className={styles.emptyCopy}>
-            Enjoy the breathing room. Your habits will be here on their next
-            scheduled day.
-          </p>
-        </section>
-      ) : (
         <>
-          <Progress
-            completed={optimisticToday.completedCount}
-            total={optimisticToday.totalCount}
+          {completionNotice}
+          <section className={styles.empty} aria-labelledby="empty-title">
+            <span className={styles.emptyIcon} aria-hidden="true">
+              ☀️
+            </span>
+            <p className={styles.emptyEyebrow}>An open day</p>
+            <h2 className={styles.emptyTitle} id="empty-title">
+              Nothing is scheduled for today.
+            </h2>
+            <p className={styles.emptyCopy}>
+              Enjoy the breathing room. Your habits will be here on their next
+              scheduled day.
+            </p>
+          </section>
+        </>
+      ) : (
+        <section className={styles.habits} aria-labelledby="today-habits-title">
+          <div
+            aria-hidden="true"
+            className={styles.stickySentinel}
+            ref={stickySentinelRef}
           />
-          <section
-            className={styles.habits}
-            aria-labelledby="today-habits-title"
+          <div
+            className={styles.stickyStack}
+            data-fade-visible={showScrollFade}
+            data-testid="today-sticky-stack"
           >
+            <Progress
+              completed={optimisticToday.completedCount}
+              total={optimisticToday.totalCount}
+            />
             <div className={styles.listHeading}>
               <h2 id="today-habits-title">Today&apos;s habits</h2>
               <p>Choose a card to update it.</p>
             </div>
-            <ul className={styles.habitList}>
-              {optimisticToday.habits.map((habit) => (
-                <li key={habit.id}>
-                  <button
-                    className={styles.habitCard}
-                    data-color={habit.color}
-                    type="button"
-                    aria-pressed={habit.completed}
-                    aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
-                    onClick={() => mutateCompletion(habit.id)}
-                  >
-                    <span className={styles.habitIdentity}>
-                      <span className={styles.habitIcon} aria-hidden="true">
-                        {habit.icon}
-                      </span>
-                      <span className={styles.habitName}>{habit.name}</span>
+            {completionNotice}
+          </div>
+          <ul className={styles.habitList}>
+            {optimisticToday.habits.map((habit) => (
+              <li key={habit.id}>
+                <button
+                  className={styles.habitCard}
+                  data-color={habit.color}
+                  type="button"
+                  aria-pressed={habit.completed}
+                  aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
+                  onClick={() => mutateCompletion(habit.id)}
+                >
+                  <span className={styles.habitIdentity}>
+                    <span className={styles.habitIcon} aria-hidden="true">
+                      {habit.icon}
                     </span>
-                    <span className={styles.completion} aria-hidden="true">
-                      <span className={styles.checkmark}>
-                        {habit.completed ? "✓" : ""}
-                      </span>
-                      <span>{habit.completed ? "Complete" : "Check in"}</span>
+                    <span className={styles.habitName}>{habit.name}</span>
+                  </span>
+                  <span className={styles.completion} aria-hidden="true">
+                    <span className={styles.checkmark}>
+                      {habit.completed ? "✓" : ""}
                     </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
+                    <span>{habit.completed ? "Complete" : "Check in"}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );
