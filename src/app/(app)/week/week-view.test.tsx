@@ -1,9 +1,21 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { WeeklyViewModel } from "@/lib/week";
 
+import { setHabitCompletion } from "./completion-actions";
 import { WeekView } from "./week-view";
+
+vi.mock("./completion-actions", () => ({
+  setHabitCompletion: vi.fn(),
+}));
 
 const week: WeeklyViewModel = {
   currentLocalDate: "2026-08-12",
@@ -42,6 +54,10 @@ const week: WeeklyViewModel = {
 };
 
 describe("Week view", () => {
+  beforeEach(() => {
+    vi.mocked(setHabitCompletion).mockReset();
+  });
+
   it("renders a semantic seven-day grid with emoji-only visual identity", () => {
     render(<WeekView week={week} />);
 
@@ -93,5 +109,90 @@ describe("Week view", () => {
       }),
     ).toBeVisible();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("optimistically edits an eligible cell and updates row progress", async () => {
+    let resolveMutation:
+      | ((value: Awaited<ReturnType<typeof setHabitCompletion>>) => void)
+      | undefined;
+    vi.mocked(setHabitCompletion).mockReturnValue(
+      new Promise((resolve) => {
+        resolveMutation = resolve;
+      }),
+    );
+    render(<WeekView week={week} />);
+
+    const cell = screen.getByRole("button", {
+      name: /Morning walk, Wednesday, August 12, 2026, today, incomplete/,
+    });
+    fireEvent.click(cell);
+
+    expect(
+      screen.getByRole("button", {
+        name: /Morning walk, Wednesday, August 12, 2026, today, completed/,
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByLabelText("2 of 4 scheduled days complete"),
+    ).toHaveTextContent("2/4");
+    expect(setHabitCompletion).toHaveBeenCalledWith(
+      "habit-a",
+      true,
+      "2026-08-12",
+    );
+
+    await act(async () => {
+      resolveMutation?.({
+        status: "success",
+        habitId: "habit-a",
+        completed: true,
+        completionId: "done-2",
+        localDate: "2026-08-12",
+      });
+    });
+  });
+
+  it("does not make future or unscheduled cells interactive", () => {
+    render(<WeekView week={week} />);
+
+    expect(
+      screen.queryByRole("button", {
+        name: /Thursday, August 13, 2026, future/,
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: /Friday, August 14, 2026, future, not scheduled/,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("restores the cell and row progress after a failed write", async () => {
+    vi.mocked(setHabitCompletion).mockResolvedValue({
+      status: "error",
+      message:
+        "We couldn't update this habit. Your previous check-in is restored.",
+    });
+    render(<WeekView week={week} />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Tuesday, August 11, 2026, incomplete/,
+      }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "previous check-in is restored",
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: /Tuesday, August 11, 2026, incomplete/,
+        }),
+      ).toHaveAttribute("aria-pressed", "false"),
+    );
+    expect(
+      screen.getByLabelText("1 of 4 scheduled days complete"),
+    ).toHaveTextContent("1/4");
   });
 });

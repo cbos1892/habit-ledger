@@ -1,9 +1,14 @@
+"use client";
+
+import { useEffect, useOptimistic, useState, useTransition } from "react";
+
 import type {
   WeeklyHabitCell,
   WeeklyHabitRow,
   WeeklyViewModel,
 } from "@/lib/week";
 
+import { setHabitCompletion } from "./completion-actions";
 import styles from "./week.module.css";
 
 const shortDayFormatter = new Intl.DateTimeFormat("en-US", {
@@ -51,13 +56,72 @@ function CellMark({ cell }: { cell: WeeklyHabitCell }) {
   return null;
 }
 
+type OptimisticCellUpdate = Readonly<{
+  completed: boolean;
+  habitId: string;
+  localDate: string;
+}>;
+
+function updateOptimisticCell(
+  week: WeeklyViewModel,
+  update: OptimisticCellUpdate,
+): WeeklyViewModel {
+  if (week.status === "empty") return week;
+
+  return {
+    ...week,
+    rows: week.rows.map((row) =>
+      row.id !== update.habitId
+        ? row
+        : {
+            ...row,
+            cells: row.cells.map((cell) =>
+              cell.localDate !== update.localDate
+                ? cell
+                : {
+                    ...cell,
+                    completionId: update.completed ? cell.completionId : null,
+                    state: update.completed ? "completed" : "incomplete",
+                  },
+            ),
+          },
+    ),
+  };
+}
+
+function getCellKey(habitId: string, localDate: string) {
+  return `${habitId}:${localDate}`;
+}
+
+function getRowProgress(row: WeeklyHabitRow) {
+  const scheduledCells = row.cells.filter(
+    ({ state }) => state !== "not-scheduled",
+  );
+
+  return {
+    completed: scheduledCells.filter(({ state }) => state === "completed")
+      .length,
+    total: scheduledCells.length,
+  };
+}
+
 function HabitRow({
   currentLocalDate,
+  mutateCompletion,
+  pendingCells,
   row,
 }: {
   currentLocalDate: string;
+  mutateCompletion: (
+    habitId: string,
+    localDate: string,
+    completed: boolean,
+  ) => void;
+  pendingCells: ReadonlySet<string>;
   row: WeeklyHabitRow;
 }) {
+  const progress = getRowProgress(row);
+
   return (
     <tr>
       <th className={styles.habitHeader} data-color={row.color} scope="row">
@@ -66,6 +130,12 @@ function HabitRow({
             {row.icon}
           </span>
           <span className={styles.srOnly}>{row.name}</span>
+          <span
+            className={styles.rowProgress}
+            aria-label={`${progress.completed} of ${progress.total} scheduled days complete`}
+          >
+            {progress.completed}/{progress.total}
+          </span>
         </span>
       </th>
       {row.cells.map((cell) => {
@@ -77,6 +147,10 @@ function HabitRow({
             : timing === "future"
               ? ", future"
               : "";
+        const editable = timing !== "future" && cell.state !== "not-scheduled";
+        const completed = cell.state === "completed";
+        const pending = pendingCells.has(getCellKey(row.id, cell.localDate));
+        const label = `${row.name}, ${fullDateFormatter.format(date)}${timingLabel}, ${getStateLabel(cell)}`;
 
         return (
           <td
@@ -85,13 +159,30 @@ function HabitRow({
             data-timing={timing}
             key={cell.localDate}
           >
-            <span className={styles.cellMark} aria-hidden="true">
-              <CellMark cell={cell} />
-            </span>
-            <span className={styles.srOnly}>
-              {row.name}, {fullDateFormatter.format(date)}
-              {timingLabel}, {getStateLabel(cell)}
-            </span>
+            {editable ? (
+              <button
+                className={styles.cellButton}
+                type="button"
+                aria-label={label}
+                aria-pressed={completed}
+                disabled={pending}
+                onClick={() =>
+                  mutateCompletion(row.id, cell.localDate, !completed)
+                }
+              >
+                <span className={styles.cellMark} aria-hidden="true">
+                  <CellMark cell={cell} />
+                </span>
+                <span className={styles.srOnly}>{label}</span>
+              </button>
+            ) : (
+              <>
+                <span className={styles.cellMark} aria-hidden="true">
+                  <CellMark cell={cell} />
+                </span>
+                <span className={styles.srOnly}>{label}</span>
+              </>
+            )}
           </td>
         );
       })}
@@ -100,7 +191,61 @@ function HabitRow({
 }
 
 export function WeekView({ week }: { week: WeeklyViewModel }) {
-  const rangeLabel = `${rangeDateFormatter.format(parseLocalDate(week.startDate))}–${rangeDateFormatter.format(parseLocalDate(week.endDate))}`;
+  const [optimisticWeek, setOptimisticCell] = useOptimistic(
+    week,
+    updateOptimisticCell,
+  );
+  const [, startTransition] = useTransition();
+  const [pendingCells, setPendingCells] = useState<ReadonlySet<string>>(
+    new Set(),
+  );
+  const [notice, setNotice] = useState<string | null>(null);
+  const rangeLabel = `${rangeDateFormatter.format(parseLocalDate(optimisticWeek.startDate))}–${rangeDateFormatter.format(parseLocalDate(optimisticWeek.endDate))}`;
+
+  useEffect(() => {
+    if (!notice) return;
+
+    const timeout = window.setTimeout(() => setNotice(null), 8000);
+
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
+
+  function mutateCompletion(
+    habitId: string,
+    localDate: string,
+    completed: boolean,
+  ) {
+    const cellKey = getCellKey(habitId, localDate);
+
+    if (pendingCells.has(cellKey)) return;
+
+    setNotice(null);
+    setPendingCells((current) => new Set(current).add(cellKey));
+
+    startTransition(async () => {
+      setOptimisticCell({ completed, habitId, localDate });
+
+      let result;
+
+      try {
+        result = await setHabitCompletion(habitId, completed, localDate);
+      } catch {
+        result = {
+          status: "error" as const,
+          message:
+            "We couldn't update this habit. Your previous check-in is restored.",
+        };
+      }
+
+      if (result.status === "error") setNotice(result.message);
+
+      setPendingCells((current) => {
+        const next = new Set(current);
+        next.delete(cellKey);
+        return next;
+      });
+    });
+  }
 
   return (
     <div className={styles.page}>
@@ -112,14 +257,29 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
           </h1>
           <p className={styles.dateRange}>{rangeLabel}</p>
         </div>
-        {week.status === "ready" ? (
+        {optimisticWeek.status === "ready" ? (
           <p className={styles.summary}>
-            {week.rows.length} {week.rows.length === 1 ? "habit" : "habits"}
+            {optimisticWeek.rows.length}{" "}
+            {optimisticWeek.rows.length === 1 ? "habit" : "habits"}
           </p>
         ) : null}
       </header>
 
-      {week.status === "empty" ? (
+      {notice ? (
+        <div className={styles.notice} role="alert">
+          <span>{notice}</span>
+          <button
+            className={styles.noticeDismiss}
+            type="button"
+            aria-label="Dismiss error message"
+            onClick={() => setNotice(null)}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
+
+      {optimisticWeek.status === "empty" ? (
         <section className={styles.empty} aria-labelledby="empty-week-title">
           <span className={styles.emptyIcon} aria-hidden="true">
             🗓️
@@ -170,9 +330,12 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                   <th className={styles.cornerHeader} scope="col">
                     Habit
                   </th>
-                  {week.localDates.map((localDate) => {
+                  {optimisticWeek.localDates.map((localDate) => {
                     const date = parseLocalDate(localDate);
-                    const timing = getTiming(localDate, week.currentLocalDate);
+                    const timing = getTiming(
+                      localDate,
+                      optimisticWeek.currentLocalDate,
+                    );
 
                     return (
                       <th
@@ -197,10 +360,12 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                 </tr>
               </thead>
               <tbody>
-                {week.rows.map((row) => (
+                {optimisticWeek.rows.map((row) => (
                   <HabitRow
-                    currentLocalDate={week.currentLocalDate}
+                    currentLocalDate={optimisticWeek.currentLocalDate}
                     key={row.id}
+                    mutateCompletion={mutateCompletion}
+                    pendingCells={pendingCells}
                     row={row}
                   />
                 ))}

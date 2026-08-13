@@ -11,6 +11,9 @@ vi.mock("../../../lib/profile", () => ({
 vi.mock("../../../lib/week", () => ({
   getWeeklyViewModel: vi.fn(),
 }));
+vi.mock("./completion-actions", () => ({
+  setHabitCompletion: vi.fn(),
+}));
 
 describe("Week page", () => {
   it("loads the current user's local weekly view model", async () => {
