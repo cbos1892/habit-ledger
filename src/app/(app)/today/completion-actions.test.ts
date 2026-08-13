@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { refresh } from "next/cache";
 
-import { requireConfiguredProfile } from "@/lib/profile";
+import { requireTimeZoneContext } from "@/lib/profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import { setHabitCompletion } from "./completion-actions";
 
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));
-vi.mock("@/lib/profile", () => ({ requireConfiguredProfile: vi.fn() }));
+vi.mock("@/lib/profile", () => ({ requireTimeZoneContext: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(),
 }));
@@ -77,10 +77,9 @@ describe("Today completion actions", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-10T12:00:00.000Z"));
-    vi.mocked(requireConfiguredProfile).mockResolvedValue({
+    vi.mocked(requireTimeZoneContext).mockResolvedValue({
       id: "user-123",
       time_zone: "UTC",
-      time_zone_confirmed_at: "2026-08-01T12:00:00.000Z",
     });
   });
 
@@ -154,7 +153,7 @@ describe("Today completion actions", () => {
       setHabitCompletion("not-a-habit", true),
     ).resolves.toMatchObject({ status: "error" });
 
-    expect(requireConfiguredProfile).not.toHaveBeenCalled();
+    expect(requireTimeZoneContext).not.toHaveBeenCalled();
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 });

@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSupabasePublicEnv } from "./env";
 import { refreshSupabaseSession } from "./proxy";
+import { TIME_ZONE_COOKIE_NAME } from "../time-zone-cookie";
+
+vi.mock("server-only", () => ({}));
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: vi.fn(),
@@ -27,12 +30,16 @@ type CookieAdapter = {
 
 const getClaims = vi.fn();
 const getUser = vi.fn();
+const profileSingle = vi.fn();
+const profileEq = vi.fn(() => ({ single: profileSingle }));
+const profileSelect = vi.fn(() => ({ eq: profileEq }));
 let cookieAdapter: CookieAdapter;
 
 describe("refreshSupabaseSession", () => {
   beforeEach(() => {
     getClaims.mockReset();
     getUser.mockReset();
+    profileSingle.mockReset();
     vi.mocked(createServerClient).mockReset();
     vi.mocked(getSupabasePublicEnv).mockReturnValue({
       publishableKey: "sb_publishable_test",
@@ -40,7 +47,10 @@ describe("refreshSupabaseSession", () => {
     });
     vi.mocked(createServerClient).mockImplementation((_url, _key, options) => {
       cookieAdapter = options.cookies as CookieAdapter;
-      return { auth: { getClaims, getUser } } as never;
+      return {
+        auth: { getClaims, getUser },
+        from: vi.fn(() => ({ select: profileSelect })),
+      } as never;
     });
   });
 
@@ -119,5 +129,31 @@ describe("refreshSupabaseSession", () => {
         expect.objectContaining({ name: "preference", value: "compact" }),
       ]),
     );
+  });
+
+  it("repairs a missing time-zone cookie from the authenticated profile", async () => {
+    vi.stubEnv(
+      "TIME_ZONE_COOKIE_SECRET",
+      "test-secret-that-is-longer-than-thirty-two-characters",
+    );
+    const request = new NextRequest("https://app.test/today", {
+      headers: { cookie: "sb-session=current" },
+    });
+    getClaims.mockResolvedValue({
+      data: { claims: { sub: "user-123" } },
+      error: null,
+    });
+    profileSingle.mockResolvedValue({
+      data: { time_zone: "America/New_York" },
+      error: null,
+    });
+
+    const response = await refreshSupabaseSession(request);
+
+    expect(profileEq).toHaveBeenCalledWith("id", "user-123");
+    expect(request.cookies.get(TIME_ZONE_COOKIE_NAME)?.value).toBeTruthy();
+    expect(response.cookies.get(TIME_ZONE_COOKIE_NAME)?.value).toBeTruthy();
+    expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+    vi.unstubAllEnvs();
   });
 });

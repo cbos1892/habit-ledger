@@ -131,6 +131,7 @@ export type Database = {
           id: string;
           time_zone: string;
           time_zone_confirmed_at: string | null;
+          time_zone_source: string;
           updated_at: string;
         };
         Insert: {
@@ -138,6 +139,7 @@ export type Database = {
           id: string;
           time_zone?: string;
           time_zone_confirmed_at?: string | null;
+          time_zone_source?: string;
           updated_at?: string;
         };
         Update: {
@@ -145,6 +147,7 @@ export type Database = {
           id?: string;
           time_zone?: string;
           time_zone_confirmed_at?: string | null;
+          time_zone_source?: string;
           updated_at?: string;
         };
         Relationships: [];

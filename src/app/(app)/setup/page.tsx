@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Card, Feedback } from "../../../components/ui";
+import { Feedback } from "../../../components/ui";
 import { requireCurrentUser } from "../../../lib/auth/current-user";
 import { getActiveHabits, getArchivedHabits } from "../../../lib/habits";
 import { getNavigationItem } from "../../../lib/navigation";
-import { getProfile } from "../../../lib/profile";
 
 import { archiveHabit, moveHabit, restoreHabit } from "./habit-actions";
 import { HabitList } from "./habit-list";
-import { TimeZoneForm } from "./time-zone-form";
 import styles from "./time-zone.module.css";
 
 const route = getNavigationItem("setup");
@@ -32,13 +30,11 @@ export default async function SetupPage({
   searchParams: Promise<{ habit?: string | string[] }>;
 }) {
   const user = await requireCurrentUser();
-  const [profile, activeHabits, archivedHabits, query] = await Promise.all([
-    getProfile(user.id),
+  const [activeHabits, archivedHabits, query] = await Promise.all([
     getActiveHabits(user.id),
     getArchivedHabits(user.id),
     searchParams,
   ]);
-  const isOnboarding = !profile.time_zone_confirmed_at;
   const habitStatus = Array.isArray(query.habit) ? query.habit[0] : query.habit;
   const habitFeedbackTitle = habitStatus
     ? habitFeedbackTitles[habitStatus]
@@ -47,17 +43,11 @@ export default async function SetupPage({
   return (
     <section aria-labelledby="page-title" className={styles.settings}>
       <div className="page-heading">
-        <p className="page-eyebrow">
-          {isOnboarding ? "One quick first step" : "Make it yours"}
-        </p>
+        <p className="page-eyebrow">Make it yours</p>
         <h1 className="page-title" id="page-title">
-          {isOnboarding ? "Welcome" : "Setup"}
+          Setup
         </h1>
-        <p className="page-description">
-          {isOnboarding
-            ? "Confirm where your day begins so Today and Week always line up with your local calendar."
-            : route.description}
-        </p>
+        <p className="page-description">{route.description}</p>
       </div>
 
       {habitFeedbackTitle ? (
@@ -90,27 +80,7 @@ export default async function SetupPage({
         />
       </section>
 
-      <Card className={styles.card}>
-        <div className={styles.cardHeading}>
-          <h2>{isOnboarding ? "Confirm your time zone" : "Time zone"}</h2>
-          <p>
-            Habit Ledger uses this setting for day and week boundaries, even
-            when the server is somewhere else.
-          </p>
-        </div>
-        <TimeZoneForm
-          initialTimeZone={profile.time_zone}
-          isOnboarding={isOnboarding}
-        />
-      </Card>
-
-      <div className={styles.note}>
-        <p>
-          Changing this later affects future date calculations only. Completed
-          habits remain attached to the local calendar dates on which you
-          recorded them.
-        </p>
-      </div>
+      <Link href="/settings/time-zone">Advanced settings</Link>
     </section>
   );
 }

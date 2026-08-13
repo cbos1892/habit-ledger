@@ -1,11 +1,16 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 import { requireCurrentUser } from "@/lib/auth/current-user";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupportedTimeZone } from "@/lib/time-zone";
+import {
+  createTimeZoneCookieValue,
+  TIME_ZONE_COOKIE_NAME,
+  timeZoneCookieOptions,
+} from "@/lib/time-zone-cookie";
 
 export type TimeZoneFormState =
   | { status: "idle" }
@@ -18,7 +23,6 @@ export async function updateTimeZone(
 ): Promise<TimeZoneFormState> {
   const value = formData.get("timeZone");
   const timeZone = typeof value === "string" ? value.trim() : "";
-  const mode = formData.get("mode");
 
   if (!isSupportedTimeZone(timeZone)) {
     return {
@@ -38,6 +42,7 @@ export async function updateTimeZone(
       .update({
         time_zone: timeZone,
         time_zone_confirmed_at: new Date().toISOString(),
+        time_zone_source: "manual",
       })
       .eq("id", user.id);
 
@@ -51,8 +56,15 @@ export async function updateTimeZone(
   }
 
   revalidatePath("/", "layout");
+  const cookieValue = await createTimeZoneCookieValue(user.id, timeZone);
 
-  if (mode === "onboarding") redirect("/today");
+  if (cookieValue) {
+    (await cookies()).set(
+      TIME_ZONE_COOKIE_NAME,
+      cookieValue,
+      timeZoneCookieOptions,
+    );
+  }
 
   return { status: "saved", timeZone };
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { Card } from "@/components/ui";
-import { requireConfiguredProfile } from "@/lib/profile";
+import { requireTimeZoneContext } from "@/lib/profile";
 import { ISO_WEEKDAYS } from "@/lib/habit-schedule";
 import { toLocalDateKey } from "@/lib/time-zone";
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewHabitPage() {
-  const profile = await requireConfiguredProfile();
+  const profile = await requireTimeZoneContext();
 
   return (
     <section aria-labelledby="page-title" className={styles.settings}>

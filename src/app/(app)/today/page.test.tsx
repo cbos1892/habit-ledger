@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { requireConfiguredProfile } from "../../../lib/profile";
+import { getCurrentTimeZoneContext } from "../../../lib/profile";
 import { getTodayViewModel } from "../../../lib/today";
 import TodayPage from "./page";
 import { TodayView } from "./today-view";
 
 vi.mock("../../../lib/profile", () => ({
-  requireConfiguredProfile: vi.fn(),
+  getCurrentTimeZoneContext: vi.fn(),
 }));
 
 vi.mock("../../../lib/today", () => ({
@@ -18,10 +18,9 @@ vi.mock("./completion-actions", () => ({
 
 describe("Today page", () => {
   it("loads the current user's local Today view model", async () => {
-    vi.mocked(requireConfiguredProfile).mockResolvedValue({
+    vi.mocked(getCurrentTimeZoneContext).mockResolvedValue({
       id: "user-123",
       time_zone: "America/New_York",
-      time_zone_confirmed_at: "2026-08-10T12:00:00.000Z",
     });
     vi.mocked(getTodayViewModel).mockResolvedValue({
       completedCount: 0,
@@ -53,10 +52,9 @@ describe("Today page", () => {
   });
 
   it("keeps an empty day distinct from a query failure", async () => {
-    vi.mocked(requireConfiguredProfile).mockResolvedValue({
+    vi.mocked(getCurrentTimeZoneContext).mockResolvedValue({
       id: "user-123",
       time_zone: "UTC",
-      time_zone_confirmed_at: "2026-08-10T12:00:00.000Z",
     });
     vi.mocked(getTodayViewModel).mockResolvedValue({
       completedCount: 0,

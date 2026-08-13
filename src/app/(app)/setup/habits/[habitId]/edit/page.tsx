@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { Card } from "@/components/ui";
 import { getActiveHabit } from "@/lib/habits";
-import { requireConfiguredProfile } from "@/lib/profile";
+import { requireTimeZoneContext } from "@/lib/profile";
 
 import { updateHabit } from "../../../habit-actions";
 import { HabitForm } from "../../../habit-form";
@@ -21,7 +21,7 @@ export default async function EditHabitPage({
 }) {
   const [{ habitId }, profile] = await Promise.all([
     params,
-    requireConfiguredProfile(),
+    requireTimeZoneContext(),
   ]);
   const habit = await getActiveHabit(profile.id, habitId);
 

@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 
 import { isHabitScheduledAt, isIsoWeekday } from "@/lib/habit-schedule";
-import { requireConfiguredProfile } from "@/lib/profile";
+import { requireTimeZoneContext } from "@/lib/profile";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toLocalDateKey } from "@/lib/time-zone";
 
@@ -36,7 +36,7 @@ export async function setHabitCompletion(
     return persistenceFailure();
   }
 
-  const profile = await requireConfiguredProfile();
+  const profile = await requireTimeZoneContext();
   const instant = new Date();
   const localDate = toLocalDateKey(instant, profile.time_zone);
 
