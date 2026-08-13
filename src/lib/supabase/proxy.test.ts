@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSupabasePublicEnv } from "./env";
 import { refreshSupabaseSession } from "./proxy";
@@ -37,6 +37,7 @@ let cookieAdapter: CookieAdapter;
 
 describe("refreshSupabaseSession", () => {
   beforeEach(() => {
+    vi.stubEnv("TIME_ZONE_COOKIE_SECRET", "");
     getClaims.mockReset();
     getUser.mockReset();
     profileSingle.mockReset();
@@ -52,6 +53,10 @@ describe("refreshSupabaseSession", () => {
         from: vi.fn(() => ({ select: profileSelect })),
       } as never;
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("validates claims and rotates refreshed cookies on the request and response", async () => {
@@ -154,6 +159,5 @@ describe("refreshSupabaseSession", () => {
     expect(request.cookies.get(TIME_ZONE_COOKIE_NAME)?.value).toBeTruthy();
     expect(response.cookies.get(TIME_ZONE_COOKIE_NAME)?.value).toBeTruthy();
     expect(response.headers.get("set-cookie")).toContain("HttpOnly");
-    vi.unstubAllEnvs();
   });
 });
