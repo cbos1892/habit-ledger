@@ -125,6 +125,69 @@ describe("Today view", () => {
     expect(screen.getByLabelText("1 of 1 habits complete")).toBeInTheDocument();
   });
 
+  it("groups progress and the habits heading in one sticky stack", () => {
+    render(<TodayView today={readyToday} />);
+
+    const stickyStack = screen.getByTestId("today-sticky-stack");
+
+    expect(stickyStack).toHaveAttribute("data-fade-visible", "false");
+    expect(stickyStack).toContainElement(screen.getByRole("progressbar"));
+    expect(stickyStack).toContainElement(
+      screen.getByRole("heading", { name: "Today's habits" }),
+    );
+    expect(stickyStack).not.toContainElement(
+      screen.getByRole("heading", { name: "Today" }),
+    );
+    expect(stickyStack).not.toContainElement(
+      screen.getByRole("button", { name: "Morning walk, not complete" }),
+    );
+  });
+
+  it("only enables the card fade after the sticky marker leaves view", () => {
+    let notifyIntersection: IntersectionObserverCallback | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          notifyIntersection = callback;
+        }
+
+        disconnect = disconnect;
+        observe = observe;
+      },
+    );
+
+    try {
+      render(<TodayView today={readyToday} />);
+
+      const stickyStack = screen.getByTestId("today-sticky-stack");
+
+      expect(observe).toHaveBeenCalledOnce();
+      expect(stickyStack).toHaveAttribute("data-fade-visible", "false");
+
+      act(() => {
+        notifyIntersection?.(
+          [{ isIntersecting: false } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      });
+      expect(stickyStack).toHaveAttribute("data-fade-visible", "true");
+
+      act(() => {
+        notifyIntersection?.(
+          [{ isIntersecting: true } as IntersectionObserverEntry],
+          {} as IntersectionObserver,
+        );
+      });
+      expect(stickyStack).toHaveAttribute("data-fade-visible", "false");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("renders an encouraging empty state without a zero-value progress card", () => {
     render(
       <TodayView
@@ -211,9 +274,10 @@ describe("Today view", () => {
       screen.getByRole("button", { name: "Morning walk, not complete" }),
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "previous check-in is restored",
-    );
+    const alert = await screen.findByRole("alert");
+
+    expect(alert).toHaveTextContent("previous check-in is restored");
+    expect(screen.getByTestId("today-sticky-stack")).toContainElement(alert);
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Morning walk, not complete" }),

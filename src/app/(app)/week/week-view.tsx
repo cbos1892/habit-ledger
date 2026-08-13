@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import {
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import type {
   WeeklyHabitCell,
@@ -140,6 +146,49 @@ function isComplete({ completed, total }: Progress) {
   return total > 0 && completed === total;
 }
 
+function DayHeaders({
+  celebration,
+  currentLocalDate,
+  localDates,
+  perfectDayDates,
+}: {
+  celebration: Celebration | null;
+  currentLocalDate: string;
+  localDates: readonly string[];
+  perfectDayDates: ReadonlySet<string>;
+}) {
+  return localDates.map((localDate) => {
+    const date = parseLocalDate(localDate);
+    const timing = getTiming(localDate, currentLocalDate);
+
+    return (
+      <th
+        className={styles.dayHeader}
+        data-celebrating={celebration?.dayDates.has(localDate)}
+        data-perfect={perfectDayDates.has(localDate)}
+        data-timing={timing}
+        key={localDate}
+        scope="col"
+      >
+        <span aria-hidden="true">{shortDayFormatter.format(date)}</span>
+        <strong aria-hidden="true">{dayNumberFormatter.format(date)}</strong>
+        <span className={styles.srOnly}>
+          {fullDateFormatter.format(date)}
+          {timing === "today" ? ", today" : ""}
+        </span>
+        {perfectDayDates.has(localDate) ? (
+          <span
+            className={styles.dayMilestone}
+            aria-label="Perfect scheduled day"
+          >
+            <span aria-hidden="true">★</span> Perfect
+          </span>
+        ) : null}
+      </th>
+    );
+  });
+}
+
 function HabitRow({
   currentLocalDate,
   mutateCompletion,
@@ -260,6 +309,8 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const gridScrollerRef = useRef<HTMLDivElement>(null);
+  const headerScrollerRef = useRef<HTMLDivElement>(null);
   const rangeLabel = `${rangeDateFormatter.format(parseLocalDate(optimisticWeek.startDate))}–${rangeDateFormatter.format(parseLocalDate(optimisticWeek.endDate))}`;
   const currentWeekStart = getLocalWeekStartDate(
     optimisticWeek.currentLocalDate,
@@ -480,77 +531,89 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
               </span>
             </div>
           </div>
-          <div
-            className={styles.scrollRegion}
-            role="region"
-            aria-label="Scrollable weekly habit grid"
-            tabIndex={0}
-          >
-            <table className={styles.grid}>
-              <caption className={styles.srOnly}>
-                Habit completion status for {rangeLabel}
-              </caption>
-              <thead>
-                <tr>
-                  <th className={styles.cornerHeader} scope="col">
-                    Habit
-                  </th>
-                  {optimisticWeek.localDates.map((localDate) => {
-                    const date = parseLocalDate(localDate);
-                    const timing = getTiming(
-                      localDate,
-                      optimisticWeek.currentLocalDate,
-                    );
-
-                    return (
-                      <th
-                        className={styles.dayHeader}
-                        data-celebrating={celebration?.dayDates.has(localDate)}
-                        data-perfect={perfectDayDates.has(localDate)}
-                        data-timing={timing}
-                        key={localDate}
-                        scope="col"
-                      >
-                        <span aria-hidden="true">
-                          {shortDayFormatter.format(date)}
-                        </span>
-                        <strong aria-hidden="true">
-                          {dayNumberFormatter.format(date)}
-                        </strong>
-                        <span className={styles.srOnly}>
-                          {fullDateFormatter.format(date)}
-                          {timing === "today" ? ", today" : ""}
-                        </span>
-                        {perfectDayDates.has(localDate) ? (
-                          <span
-                            className={styles.dayMilestone}
-                            aria-label="Perfect scheduled day"
-                          >
-                            <span aria-hidden="true">★</span> Perfect
-                          </span>
-                        ) : null}
+          <div className={styles.gridFrame}>
+            <div
+              aria-hidden="true"
+              className={styles.stickyGridHeader}
+              data-sticky-week-header="true"
+            >
+              <div
+                className={styles.stickyHeaderScroller}
+                onScroll={(event) => {
+                  if (gridScrollerRef.current) {
+                    gridScrollerRef.current.scrollLeft =
+                      event.currentTarget.scrollLeft;
+                  }
+                }}
+                ref={headerScrollerRef}
+              >
+                <table className={styles.grid}>
+                  <thead>
+                    <tr>
+                      <th className={styles.cornerHeader} scope="col">
+                        Habit
                       </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {optimisticWeek.rows.map((row) => (
-                  <HabitRow
-                    currentLocalDate={optimisticWeek.currentLocalDate}
-                    key={row.id}
-                    mutateCompletion={mutateCompletion}
-                    pendingCells={pendingCells}
-                    row={row}
-                    celebratingDayDates={
-                      celebration?.dayDates ?? new Set<string>()
-                    }
-                    celebratingRowIds={celebration?.rowIds ?? new Set<string>()}
-                    perfectDayDates={perfectDayDates}
-                  />
-                ))}
-              </tbody>
-            </table>
+                      <DayHeaders
+                        celebration={celebration}
+                        currentLocalDate={optimisticWeek.currentLocalDate}
+                        localDates={optimisticWeek.localDates}
+                        perfectDayDates={perfectDayDates}
+                      />
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            </div>
+            <div
+              className={styles.scrollRegion}
+              role="region"
+              aria-label="Scrollable weekly habit grid"
+              onScroll={(event) => {
+                if (headerScrollerRef.current) {
+                  headerScrollerRef.current.scrollLeft =
+                    event.currentTarget.scrollLeft;
+                }
+              }}
+              ref={gridScrollerRef}
+              tabIndex={0}
+            >
+              <table className={styles.grid}>
+                <caption className={styles.srOnly}>
+                  Habit completion status for {rangeLabel}
+                </caption>
+                <thead>
+                  <tr>
+                    <th className={styles.cornerHeader} scope="col">
+                      Habit
+                    </th>
+                    <DayHeaders
+                      celebration={celebration}
+                      currentLocalDate={optimisticWeek.currentLocalDate}
+                      localDates={optimisticWeek.localDates}
+                      perfectDayDates={perfectDayDates}
+                    />
+                  </tr>
+                </thead>
+                <tbody>
+                  {optimisticWeek.rows.map((row) => (
+                    <HabitRow
+                      currentLocalDate={optimisticWeek.currentLocalDate}
+                      key={row.id}
+                      mutateCompletion={mutateCompletion}
+                      pendingCells={pendingCells}
+                      row={row}
+                      celebratingDayDates={
+                        celebration?.dayDates ?? new Set<string>()
+                      }
+                      celebratingRowIds={
+                        celebration?.rowIds ?? new Set<string>()
+                      }
+                      perfectDayDates={perfectDayDates}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       )}

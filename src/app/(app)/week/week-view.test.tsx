@@ -79,6 +79,32 @@ describe("Week view", () => {
     ).toHaveAttribute("tabindex", "0");
   });
 
+  it("keeps a hidden visual header synchronized with horizontal grid navigation", () => {
+    const { container } = render(<WeekView week={week} />);
+
+    const table = screen.getByRole("table", {
+      name: "Habit completion status for Aug 10–Aug 16",
+    });
+    const gridScroller = screen.getByRole("region", {
+      name: "Scrollable weekly habit grid",
+    });
+    const stickyHeader = container.querySelector<HTMLElement>(
+      '[data-sticky-week-header="true"]',
+    );
+    const headerScroller = stickyHeader?.firstElementChild as HTMLElement;
+
+    expect(table.querySelector("thead")).not.toBeNull();
+    expect(stickyHeader).toHaveAttribute("aria-hidden", "true");
+
+    gridScroller.scrollLeft = 72;
+    fireEvent.scroll(gridScroller);
+    expect(headerScroller.scrollLeft).toBe(72);
+
+    headerScroller.scrollLeft = 28;
+    fireEvent.scroll(headerScroller);
+    expect(gridScroller.scrollLeft).toBe(28);
+  });
+
   it("links to adjacent local weeks and prevents future-week navigation", () => {
     render(<WeekView week={week} />);
 
