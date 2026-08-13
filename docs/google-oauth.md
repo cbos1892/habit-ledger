@@ -51,14 +51,13 @@ Redirect URLs
 http://localhost:3000/auth/callback
 http://127.0.0.1:3000/auth/callback
 https://habitledger.vercel.app/auth/callback
-https://habit-ledger-git-codex-performance-foundation-curtis-s-team.vercel.app/auth/callback
-https://habit-ledger-git-codex-performance-foundation-curtis-s-team.vercel.app/auth/callback?next=/today
+https://habit-ledger-*-curtis-s-team.vercel.app/**
 ```
 
-Add deliberate Vercel preview callback URLs before testing a preview. Prefer
-the branch's stable Vercel alias over a one-off deployment URL, and avoid a
-broad production wildcard when an exact preview URL is sufficient. Redirect
-allowlist entries must include query parameters used by the application's
+The project-scoped wildcard permits Habit Ledger's stable branch aliases and
+one-off preview deployment URLs while excluding other projects in the Vercel
+team. Keep the production callback exact. Supabase wildcard matching includes
+the callback path and query parameters supplied by the application's
 `redirectTo` value.
 
 ## 3. Verify the deployed flow

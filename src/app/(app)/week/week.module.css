@@ -200,23 +200,26 @@
 }
 
 .habitHeader {
-  --habit-color: var(--habit-fern);
   height: 4.75rem;
   border-top: 1px solid var(--color-border);
   box-shadow: 0.4rem 0 0.8rem -0.8rem rgb(32 35 31 / 50%);
   padding: var(--space-3);
 }
 
-.habitHeader[data-color="ocean"] {
+.habitRow {
+  --habit-color: var(--habit-fern);
+}
+
+.habitRow[data-color="ocean"] {
   --habit-color: var(--habit-ocean);
 }
-.habitHeader[data-color="sun"] {
+.habitRow[data-color="sun"] {
   --habit-color: var(--habit-sun);
 }
-.habitHeader[data-color="plum"] {
+.habitRow[data-color="plum"] {
   --habit-color: var(--habit-plum);
 }
-.habitHeader[data-color="rose"] {
+.habitRow[data-color="rose"] {
   --habit-color: var(--habit-rose);
 }
 
@@ -225,26 +228,35 @@
   min-width: 0;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  gap: 0.375rem;
 }
 
 .rowProgress {
-  color: var(--color-text-muted);
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
+  overflow: hidden;
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--habit-color) 22%, var(--color-surface));
+}
+
+.rowProgressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--habit-color);
+  transition: width var(--duration-normal) var(--ease-standard);
 }
 
 .habitIcon {
   display: inline-flex;
-  min-width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--habit-color) 16%, var(--color-surface));
-  padding-inline: var(--space-2);
   font-size: var(--text-lg);
   white-space: nowrap;
 }
@@ -284,6 +296,24 @@
   color: var(--color-accent-hover);
 }
 
+.dayHeader[data-perfect="true"] {
+  box-shadow: inset 0 -3px var(--color-success);
+  background: color-mix(
+    in srgb,
+    var(--color-success-soft) 62%,
+    var(--color-surface)
+  );
+}
+
+.dayMilestone {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-success);
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
 .cell {
   height: 4.75rem;
   border-top: 1px solid var(--color-border);
@@ -298,6 +328,36 @@
     var(--color-accent-soft) 56%,
     var(--color-surface)
   );
+}
+
+.cell[data-perfect="true"] {
+  background: color-mix(
+    in srgb,
+    var(--color-success-soft) 34%,
+    var(--color-surface)
+  );
+}
+
+.grid tr[data-complete="true"] .habitHeader,
+.grid tr[data-complete="true"] .cell {
+  border-top-color: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    var(--color-border)
+  );
+}
+
+.grid tr[data-complete="true"] .habitHeader {
+  background: color-mix(
+    in srgb,
+    var(--color-success-soft) 58%,
+    var(--color-surface)
+  );
+}
+
+.grid tr[data-complete="true"] .habitIcon {
+  outline: 2px solid var(--habit-color);
+  outline-offset: 2px;
 }
 
 .cellMark {
@@ -346,8 +406,9 @@
 }
 
 .cell[data-state="completed"] .cellMark {
-  border-color: var(--color-success);
-  background: var(--color-success);
+  border-color: var(--habit-color);
+  background: var(--habit-color);
+  color: var(--color-on-accent);
 }
 
 .cell[data-state="not-scheduled"] .cellMark {
@@ -365,6 +426,23 @@
 .cell[data-state="completed"][data-timing="future"] .cellMark {
   border-style: solid;
   opacity: 1;
+}
+
+@keyframes milestoneGlow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+  45% {
+    box-shadow: inset 0 0 0 3px
+      color-mix(in srgb, var(--color-success) 58%, transparent);
+  }
+}
+
+.grid tr[data-celebrating="true"] .habitHeader,
+.dayHeader[data-celebrating="true"],
+.cell[data-celebrating="true"] {
+  animation: milestoneGlow 700ms var(--ease-standard) 1;
 }
 
 .empty {
@@ -454,5 +532,18 @@
   .cell {
     width: 4.75rem;
     min-width: 4.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowProgressFill {
+    transition: none;
+  }
+
+  .grid tr[data-celebrating="true"] .habitHeader,
+  .dayHeader[data-celebrating="true"],
+  .cell[data-celebrating="true"] {
+    animation: none;
+    box-shadow: inset 0 0 0 2px var(--color-success);
   }
 }

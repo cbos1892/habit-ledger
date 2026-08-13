@@ -177,9 +177,16 @@ describe("Week view", () => {
         name: /Morning walk, Wednesday, August 12, 2026, today, completed/,
       }),
     ).toBeDisabled();
-    expect(
-      screen.getByLabelText("2 of 4 scheduled days complete"),
-    ).toHaveTextContent("2/4");
+    const progress = screen.getByRole("progressbar", {
+      name: "Morning walk weekly progress",
+    });
+    expect(progress).toHaveAttribute("aria-valuenow", "2");
+    expect(progress).toHaveAttribute(
+      "aria-valuetext",
+      "2 of 4 scheduled days complete",
+    );
+    expect(progress).toHaveTextContent("");
+    expect(screen.queryByText(/weekly progress/i)).not.toBeInTheDocument();
     expect(setHabitCompletion).toHaveBeenCalledWith(
       "habit-a",
       true,
@@ -237,7 +244,103 @@ describe("Week view", () => {
       ).toHaveAttribute("aria-pressed", "false"),
     );
     expect(
-      screen.getByLabelText("1 of 4 scheduled days complete"),
-    ).toHaveTextContent("1/4");
+      screen.getByRole("progressbar", { name: "Morning walk weekly progress" }),
+    ).toHaveAttribute("aria-valuetext", "1 of 4 scheduled days complete");
+  });
+
+  it("marks completed rows and perfect scheduled days without replaying a celebration", () => {
+    const completedWeek: WeeklyViewModel = {
+      ...week,
+      currentLocalDate: "2026-08-16",
+      rows: [
+        {
+          ...week.rows[0],
+          cells: week.localDates.map((localDate, index) => ({
+            completionId: index === 0 ? "done-1" : null,
+            localDate,
+            state: index === 0 ? "completed" : "not-scheduled",
+          })),
+        },
+      ],
+    };
+
+    render(<WeekView week={completedWeek} />);
+
+    expect(screen.getByRole("row", { name: /Morning walk/ })).toHaveAttribute(
+      "data-complete",
+      "true",
+    );
+    expect(screen.getByRole("row", { name: /Morning walk/ })).toHaveAttribute(
+      "data-color",
+      "fern",
+    );
+    expect(
+      screen.getByRole("columnheader", {
+        name: /Monday, August 10, 2026.*Perfect scheduled day/,
+      }),
+    ).toHaveAttribute("data-perfect", "true");
+    expect(
+      screen.getByRole("progressbar", { name: "Morning walk weekly progress" }),
+    ).toHaveAttribute("aria-valuenow", "1");
+    expect(screen.queryByText(/week is complete/)).not.toBeInTheDocument();
+  });
+
+  it("celebrates only when an edit newly completes a row and scheduled day", async () => {
+    vi.mocked(setHabitCompletion).mockResolvedValue({
+      status: "success",
+      habitId: "habit-a",
+      completed: true,
+      completionId: "done-2",
+      localDate: "2026-08-11",
+    });
+    const milestoneWeek: WeeklyViewModel = {
+      ...week,
+      currentLocalDate: "2026-08-16",
+      rows: [
+        {
+          ...week.rows[0],
+          cells: week.localDates.map((localDate, index) => ({
+            completionId: index === 0 ? "done-1" : null,
+            localDate,
+            state:
+              index === 0
+                ? "completed"
+                : index === 1
+                  ? "incomplete"
+                  : "not-scheduled",
+          })),
+        },
+      ],
+    };
+
+    render(<WeekView week={milestoneWeek} />);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Morning walk, Tuesday, August 11, 2026, incomplete/,
+      }),
+    );
+
+    expect(screen.getByRole("row", { name: /Morning walk/ })).toHaveAttribute(
+      "data-celebrating",
+      "true",
+    );
+    expect(
+      screen.getByRole("columnheader", {
+        name: /Tuesday, August 11, 2026.*Perfect scheduled day/,
+      }),
+    ).toHaveAttribute("data-celebrating", "true");
+    expect(
+      screen.getByText(
+        "Morning walk’s week is complete. Tue is a perfect scheduled day.",
+      ),
+    ).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(setHabitCompletion).toHaveBeenCalledWith(
+        "habit-a",
+        true,
+        "2026-08-11",
+      ),
+    );
   });
 });

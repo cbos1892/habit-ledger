@@ -159,12 +159,13 @@ enabled = true
 site_url = "https://habitledger.vercel.app"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
-# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
+# URLs and supported wildcard patterns that auth providers may redirect to after authentication.
 additional_redirect_urls = [
   "http://localhost:3000/**",
   "http://localhost:3000/auth/callback",
   "http://127.0.0.1:3000/auth/callback",
   "https://habitledger.vercel.app/auth/callback",
+  "https://habit-ledger-*-curtis-s-team.vercel.app/**",
   "https://habit-ledger-git-codex-performance-foundation-curtis-s-team.vercel.app/auth/callback",
   "https://habit-ledger-git-codex-performance-foundation-curtis-s-team.vercel.app/auth/callback?next=/today",
   "https://habit-ledger-git-codex-task-7-passwordless-auth-curtis-s-team.vercel.app/auth/callback",
