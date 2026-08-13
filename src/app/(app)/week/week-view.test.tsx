@@ -79,7 +79,7 @@ describe("Week view", () => {
     ).toHaveAttribute("tabindex", "0");
   });
 
-  it("keeps a hidden visual header synchronized with horizontal grid navigation", () => {
+  it("uses grid navigation as the sole source for pinned header scrolling", () => {
     const { container } = render(<WeekView week={week} />);
 
     const table = screen.getByRole("table", {
@@ -91,18 +91,19 @@ describe("Week view", () => {
     const stickyHeader = container.querySelector<HTMLElement>(
       '[data-sticky-week-header="true"]',
     );
-    const headerScroller = stickyHeader?.firstElementChild as HTMLElement;
+    const headerTrack = container.querySelector<HTMLElement>(
+      '[data-week-header-track="true"]',
+    );
 
     expect(table.querySelector("thead")).not.toBeNull();
     expect(stickyHeader).toHaveAttribute("aria-hidden", "true");
+    expect(headerTrack).not.toBeNull();
 
     gridScroller.scrollLeft = 72;
     fireEvent.scroll(gridScroller);
-    expect(headerScroller.scrollLeft).toBe(72);
-
-    headerScroller.scrollLeft = 28;
-    fireEvent.scroll(headerScroller);
-    expect(gridScroller.scrollLeft).toBe(28);
+    expect(headerTrack?.style.getPropertyValue("--week-scroll-offset")).toBe(
+      "-72px",
+    );
   });
 
   it("links to adjacent local weeks and prevents future-week navigation", () => {
