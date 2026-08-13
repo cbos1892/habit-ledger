@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { requireConfiguredProfile } from "../../../lib/profile";
+import { getCurrentTimeZoneContext } from "../../../lib/profile";
 import { getWeeklyViewModel } from "../../../lib/week";
 import WeekPage from "./page";
 import { WeekView } from "./week-view";
 
 vi.mock("../../../lib/profile", () => ({
-  requireConfiguredProfile: vi.fn(),
+  getCurrentTimeZoneContext: vi.fn(),
 }));
 vi.mock("../../../lib/week", () => ({
   getWeeklyViewModel: vi.fn(),
@@ -14,10 +14,9 @@ vi.mock("../../../lib/week", () => ({
 
 describe("Week page", () => {
   it("loads the current user's local weekly view model", async () => {
-    vi.mocked(requireConfiguredProfile).mockResolvedValue({
+    vi.mocked(getCurrentTimeZoneContext).mockResolvedValue({
       id: "user-123",
       time_zone: "America/New_York",
-      time_zone_confirmed_at: "2026-08-10T12:00:00.000Z",
     });
     vi.mocked(getWeeklyViewModel).mockResolvedValue({
       currentLocalDate: "2026-08-11",

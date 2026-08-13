@@ -68,8 +68,11 @@ The application requires these variables in every runtime environment:
 | -------------------------------------- | ----------------- | -------------------------- | -------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`             | `.env.local`      | Vercel environment setting | Vercel environment setting |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `.env.local`      | Vercel environment setting | Vercel environment setting |
+| `TIME_ZONE_COOKIE_SECRET`              | `.env.local`      | Vercel environment setting | Vercel environment setting |
 
 Use `.env.example` only as a safe template. Do not commit `.env.local` or any real privileged credential. If a server-only secret becomes necessary later, configure it only in `.env.local` and the appropriate hosted environment, never with a `NEXT_PUBLIC_` prefix.
+
+`TIME_ZONE_COOKIE_SECRET` signs the HTTP-only, user-bound time-zone cache used by server rendering. Generate an independent value with `openssl rand -base64 32`; do not reuse a Supabase key. If it is missing, too short, or rotated, the application safely falls back to the profile until a valid cookie can be issued.
 
 Preview and production intentionally use the same hosted Supabase project for the private MVP. The variables are explicitly scoped to both Vercel environments. Introduce separate Supabase projects and environment-specific values before this shared-backend tradeoff is no longer appropriate.
 

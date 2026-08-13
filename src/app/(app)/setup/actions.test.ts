@@ -1,20 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { requireCurrentUser } from "@/lib/auth/current-user";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createTimeZoneCookieValue } from "@/lib/time-zone-cookie";
 
 import { updateTimeZone } from "./actions";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-vi.mock("next/navigation", () => ({
-  redirect: vi.fn(() => {
-    throw new Error("NEXT_REDIRECT");
-  }),
+const setCookie = vi.hoisted(() => vi.fn());
+
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({ set: setCookie })),
 }));
+
+vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/auth/current-user", () => ({
   requireCurrentUser: vi.fn(),
@@ -24,13 +27,18 @@ vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(),
 }));
 
+vi.mock("@/lib/time-zone-cookie", () => ({
+  createTimeZoneCookieValue: vi.fn(),
+  TIME_ZONE_COOKIE_NAME: "habit-ledger-time-zone",
+  timeZoneCookieOptions: { httpOnly: true, path: "/" },
+}));
+
 const eq = vi.fn();
 const update = vi.fn(() => ({ eq }));
 
-function formData(timeZone: string, mode = "settings") {
+function formData(timeZone: string) {
   const data = new FormData();
   data.set("timeZone", timeZone);
-  data.set("mode", mode);
   return data;
 }
 
@@ -39,7 +47,10 @@ describe("time-zone update action", () => {
     eq.mockReset();
     update.mockClear();
     vi.mocked(revalidatePath).mockClear();
-    vi.mocked(redirect).mockClear();
+    setCookie.mockReset();
+    vi.mocked(cookies).mockClear();
+    vi.mocked(createTimeZoneCookieValue).mockReset();
+    vi.mocked(createTimeZoneCookieValue).mockResolvedValue("signed-cookie");
     vi.mocked(requireCurrentUser).mockReset();
     vi.mocked(requireCurrentUser).mockResolvedValue({ id: "user-123" });
     vi.mocked(createServerSupabaseClient).mockReset();
@@ -73,25 +84,19 @@ describe("time-zone update action", () => {
     expect(update).toHaveBeenCalledWith({
       time_zone: "America/New_York",
       time_zone_confirmed_at: expect.any(String),
+      time_zone_source: "manual",
     });
     expect(eq).toHaveBeenCalledWith("id", "user-123");
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+    expect(setCookie).toHaveBeenCalledWith(
+      "habit-ledger-time-zone",
+      "signed-cookie",
+      expect.objectContaining({ httpOnly: true, path: "/" }),
+    );
     expect(result).toEqual({
       status: "saved",
       timeZone: "America/New_York",
     });
-  });
-
-  it("continues to Today after first-run confirmation", async () => {
-    eq.mockResolvedValue({ error: null });
-
-    await expect(
-      updateTimeZone(
-        { status: "idle" },
-        formData("America/Chicago", "onboarding"),
-      ),
-    ).rejects.toThrow("NEXT_REDIRECT");
-    expect(redirect).toHaveBeenCalledWith("/today");
   });
 
   it("returns a safe retry message when persistence fails", async () => {

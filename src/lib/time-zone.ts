@@ -11,10 +11,18 @@ export function isSupportedTimeZone(value: string): boolean {
   }
 }
 
-export function getBrowserTimeZone(): string {
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+export function getDetectedBrowserTimeZone(): string | null {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  return isSupportedTimeZone(timeZone) ? timeZone : DEFAULT_TIME_ZONE;
+    return isSupportedTimeZone(timeZone) ? timeZone : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getBrowserTimeZone(): string {
+  return getDetectedBrowserTimeZone() ?? DEFAULT_TIME_ZONE;
 }
 
 export function toLocalDateKey(

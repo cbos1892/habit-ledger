@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(20);
+select plan(24);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select col_is_pk('public', 'profiles', 'id', 'profiles.id is the primary key');
@@ -14,6 +14,19 @@ select col_type_is(
   'time_zone_confirmed_at',
   'timestamp with time zone',
   'time-zone confirmation is stored as a timestamp'
+);
+select col_type_is(
+  'public',
+  'profiles',
+  'time_zone_source',
+  'text',
+  'time-zone selection source is stored as text'
+);
+select col_not_null(
+  'public',
+  'profiles',
+  'time_zone_source',
+  'time-zone selection source is required'
 );
 select col_not_null('public', 'profiles', 'created_at', 'created_at is required');
 select col_not_null('public', 'profiles', 'updated_at', 'updated_at is required');
@@ -66,6 +79,16 @@ select is(
   'new profiles default to UTC'
 );
 
+select is(
+  (
+    select time_zone_source
+    from public.profiles
+    where id = '11111111-1111-4111-8111-111111111111'
+  ),
+  'automatic',
+  'new profiles allow automatic browser synchronization'
+);
+
 select ok(
   (
     select time_zone_confirmed_at is null
@@ -85,7 +108,7 @@ select results_eq(
 );
 
 select lives_ok(
-  $$update public.profiles set time_zone = 'America/New_York', time_zone_confirmed_at = now() where id = '11111111-1111-4111-8111-111111111111'$$,
+  $$update public.profiles set time_zone = 'America/New_York', time_zone_confirmed_at = now(), time_zone_source = 'manual' where id = '11111111-1111-4111-8111-111111111111'$$,
   'a user can update their own time zone'
 );
 
@@ -96,6 +119,16 @@ select ok(
     where id = '11111111-1111-4111-8111-111111111111'
   ),
   'confirming a time zone records completion of onboarding'
+);
+
+select is(
+  (
+    select time_zone_source
+    from public.profiles
+    where id = '11111111-1111-4111-8111-111111111111'
+  ),
+  'manual',
+  'a user can preserve an explicit time-zone choice'
 );
 
 select results_eq(

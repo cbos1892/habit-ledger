@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { PrimaryNavigation } from "./navigation";
 
 function Brand() {
@@ -39,6 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <PrimaryNavigation />
         <div className="desktop-footer">
+          <Link href="/settings/time-zone">Time zone</Link>
           <p className="desktop-note">A quiet place for steady progress.</p>
           <SignOutForm />
         </div>

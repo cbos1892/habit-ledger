@@ -1,10 +1,19 @@
 import { AppShell } from "../../components/app-shell/app-shell";
-import { requireCurrentUser } from "../../lib/auth/current-user";
+import { TimeZoneSynchronizer } from "../../components/time-zone-synchronizer";
+import { getCurrentTimeZoneContext } from "../../lib/profile";
 
 export default async function ApplicationLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  await requireCurrentUser();
+  const context = await getCurrentTimeZoneContext();
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <TimeZoneSynchronizer
+        serverTimeZone={context.time_zone}
+        userId={context.id}
+      />
+      {children}
+    </AppShell>
+  );
 }

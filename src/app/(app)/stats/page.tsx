@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { RoutePlaceholder } from "../../../components/route-placeholder";
 import { getNavigationItem } from "../../../lib/navigation";
-import { requireConfiguredProfile } from "../../../lib/profile";
+import { getCurrentTimeZoneContext } from "../../../lib/profile";
 
 const route = getNavigationItem("stats");
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StatsPage() {
-  await requireConfiguredProfile();
+  await getCurrentTimeZoneContext();
 
   return (
     <RoutePlaceholder

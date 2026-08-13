@@ -12,7 +12,6 @@ const initialState: TimeZoneFormState = { status: "idle" };
 
 type TimeZoneFormProps = {
   initialTimeZone: string;
-  isOnboarding: boolean;
 };
 
 const commonTimeZones = [
@@ -31,10 +30,7 @@ const commonTimeZones = [
 const subscribeToBrowserTimeZone = () => () => undefined;
 const getServerTimeZone = () => null;
 
-export function TimeZoneForm({
-  initialTimeZone,
-  isOnboarding,
-}: TimeZoneFormProps) {
+export function TimeZoneForm({ initialTimeZone }: TimeZoneFormProps) {
   const [state, formAction, pending] = useActionState(
     updateTimeZone,
     initialState,
@@ -44,8 +40,6 @@ export function TimeZoneForm({
     getBrowserTimeZone,
     getServerTimeZone,
   );
-  const suggestedTimeZone =
-    isOnboarding && browserTimeZone ? browserTimeZone : initialTimeZone;
   const options = Array.from(
     new Set([
       ...commonTimeZones,
@@ -71,11 +65,6 @@ export function TimeZoneForm({
         </Feedback>
       ) : null}
 
-      <input
-        name="mode"
-        type="hidden"
-        value={isOnboarding ? "onboarding" : "settings"}
-      />
       <TextField
         autoComplete="off"
         disabled={pending}
@@ -86,14 +75,13 @@ export function TimeZoneForm({
         }
         error={state.status === "error" ? state.timeZoneError : undefined}
         id="time-zone"
-        key={isOnboarding ? (browserTimeZone ?? "detecting") : "settings"}
         label="Time zone"
         list="time-zone-options"
         name="timeZone"
         placeholder="America/New_York"
         required
         spellCheck={false}
-        defaultValue={suggestedTimeZone}
+        defaultValue={initialTimeZone}
       />
       <datalist id="time-zone-options">
         {options.map((option) => (
@@ -103,11 +91,7 @@ export function TimeZoneForm({
 
       <div className={styles.actions}>
         <Button disabled={pending} type="submit">
-          {pending
-            ? "Saving…"
-            : isOnboarding
-              ? "Confirm and continue"
-              : "Save time zone"}
+          {pending ? "Saving…" : "Save time zone"}
         </Button>
       </div>
     </form>
