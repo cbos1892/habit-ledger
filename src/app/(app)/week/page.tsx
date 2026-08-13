@@ -12,9 +12,17 @@ export const metadata: Metadata = {
   description: route.description,
 };
 
-export default async function WeekPage() {
+export default async function WeekPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string | string[] }>;
+}) {
+  const requestedWeek = (await searchParams).week;
   const context = await getCurrentTimeZoneContext();
-  const week = await getWeeklyViewModel(context.id, context.time_zone);
+  const week = await getWeeklyViewModel(context.id, context.time_zone, {
+    selectedWeekStart:
+      typeof requestedWeek === "string" ? requestedWeek : undefined,
+  });
 
   return <WeekView week={week} />;
 }

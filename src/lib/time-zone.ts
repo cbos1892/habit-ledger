@@ -69,17 +69,41 @@ export function addLocalDateDays(localDate: string, days: number): string {
   return toLocalDateKey(date, "UTC");
 }
 
+export function getLocalWeekStartDate(
+  localDate: string,
+  weekStartsOn: 0 | 1 = 1,
+): string {
+  const date = new Date(`${localDate}T00:00:00.000Z`);
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    toLocalDateKey(date, "UTC") !== localDate
+  ) {
+    throw new RangeError("Invalid local date");
+  }
+
+  const daysFromStart = (date.getUTCDay() - weekStartsOn + 7) % 7;
+
+  return addLocalDateDays(localDate, -daysFromStart);
+}
+
+export function getLocalWeekDateKeysFromDate(
+  localDate: string,
+  weekStartsOn: 0 | 1 = 1,
+): readonly string[] {
+  const start = getLocalWeekStartDate(localDate, weekStartsOn);
+
+  return Object.freeze(
+    Array.from({ length: 7 }, (_, index) => addLocalDateDays(start, index)),
+  );
+}
+
 export function getLocalWeekDateKeys(
   instant: Date | number | string,
   timeZone: string,
   weekStartsOn: 0 | 1 = 1,
 ): readonly string[] {
   const localDate = toLocalDateKey(instant, timeZone);
-  const dayOfWeek = new Date(`${localDate}T00:00:00.000Z`).getUTCDay();
-  const daysFromStart = (dayOfWeek - weekStartsOn + 7) % 7;
-  const start = addLocalDateDays(localDate, -daysFromStart);
 
-  return Object.freeze(
-    Array.from({ length: 7 }, (_, index) => addLocalDateDays(start, index)),
-  );
+  return getLocalWeekDateKeysFromDate(localDate, weekStartsOn);
 }

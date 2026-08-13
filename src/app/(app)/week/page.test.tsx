@@ -40,13 +40,53 @@ describe("Week page", () => {
       weekStartsOn: 1,
     });
 
-    const result = await WeekPage();
+    const result = await WeekPage({ searchParams: Promise.resolve({}) });
 
     expect(getWeeklyViewModel).toHaveBeenCalledWith(
       "user-123",
       "America/New_York",
+      {
+        selectedWeekStart: undefined,
+      },
     );
     expect(result.type).toBe(WeekView);
     expect(result.props.week.currentLocalDate).toBe("2026-08-11");
+  });
+
+  it("loads the URL-selected local week", async () => {
+    vi.mocked(getCurrentTimeZoneContext).mockResolvedValue({
+      id: "user-123",
+      time_zone: "America/New_York",
+    });
+    vi.mocked(getWeeklyViewModel).mockResolvedValue({
+      currentLocalDate: "2026-08-11",
+      endDate: "2026-08-09",
+      localDates: [
+        "2026-08-03",
+        "2026-08-04",
+        "2026-08-05",
+        "2026-08-06",
+        "2026-08-07",
+        "2026-08-08",
+        "2026-08-09",
+      ],
+      rows: [],
+      startDate: "2026-08-03",
+      status: "empty",
+      timeZone: "America/New_York",
+      weekStartsOn: 1,
+    });
+
+    await WeekPage({
+      searchParams: Promise.resolve({ week: "2026-08-03" }),
+    });
+
+    expect(getWeeklyViewModel).toHaveBeenCalledWith(
+      "user-123",
+      "America/New_York",
+      {
+        selectedWeekStart: "2026-08-03",
+      },
+    );
   });
 });
