@@ -44,6 +44,82 @@
   justify-content: flex-start;
 }
 
+.choiceGroup {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.choiceGroup legend {
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 750;
+}
+
+.choiceDescription,
+.choiceError {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+.choiceDescription {
+  color: var(--color-text-muted);
+}
+
+.choiceError {
+  color: var(--color-danger);
+  font-weight: 650;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  padding: var(--space-4);
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.choice:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.choice input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--color-accent);
+}
+
+.choice span {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.choice small {
+  color: var(--color-text-muted);
+  line-height: var(--leading-normal);
+}
+
 .note {
   border-left: 3px solid var(--color-accent);
   padding-left: var(--space-4);
@@ -83,7 +159,8 @@
 }
 
 .primaryLink,
-.editLink {
+.editLink,
+.advancedSettingsLink {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
@@ -105,9 +182,26 @@
 }
 
 .primaryLink:focus-visible,
-.editLink:focus-visible {
+.editLink:focus-visible,
+.advancedSettingsLink:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+.advancedSettingsLink {
+  width: fit-content;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-raised);
+  padding: 0 var(--space-5);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.advancedSettingsLink:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-hover);
 }
 
 .habitList {
@@ -282,7 +376,12 @@
   }
 
   .primaryLink,
+  .advancedSettingsLink,
   .actions button {
     width: 100%;
+  }
+
+  .choices {
+    grid-template-columns: 1fr;
   }
 }

@@ -7,6 +7,7 @@ import {
   getLocalWeekDateKeysFromDate,
   getLocalWeekStartDate,
   isSupportedTimeZone,
+  isWeekStartsOn,
   toLocalDateKey,
 } from "./time-zone";
 
@@ -16,6 +17,13 @@ describe("time-zone utilities", () => {
     expect(isSupportedTimeZone("UTC")).toBe(true);
     expect(isSupportedTimeZone("Not/A_Time_Zone")).toBe(false);
     expect(isSupportedTimeZone("")).toBe(false);
+  });
+
+  it("accepts only supported week-start values", () => {
+    expect(isWeekStartsOn(0)).toBe(true);
+    expect(isWeekStartsOn(1)).toBe(true);
+    expect(isWeekStartsOn(2)).toBe(false);
+    expect(isWeekStartsOn("1")).toBe(false);
   });
 
   it("detects the browser's resolved time zone", () => {
@@ -73,6 +81,15 @@ describe("time-zone utilities", () => {
       "2026-03-08",
     ]);
     expect(getLocalWeekStartDate("2026-01-01", 0)).toBe("2025-12-28");
+    expect(getLocalWeekDateKeysFromDate("2027-01-01", 0)).toEqual([
+      "2026-12-27",
+      "2026-12-28",
+      "2026-12-29",
+      "2026-12-30",
+      "2026-12-31",
+      "2027-01-01",
+      "2027-01-02",
+    ]);
   });
 
   it("rejects invalid local dates before deriving week boundaries", () => {

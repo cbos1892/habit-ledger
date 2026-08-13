@@ -10,6 +10,7 @@ import {
   getLocalWeekDateKeysFromDate,
   getLocalWeekStartDate,
   toLocalDateKey,
+  type WeekStartsOn,
 } from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
@@ -39,7 +40,7 @@ type WeeklyViewModelBase = Readonly<{
   localDates: readonly string[];
   startDate: string;
   timeZone: string;
-  weekStartsOn: 0 | 1;
+  weekStartsOn: WeekStartsOn;
 }>;
 
 export type WeeklyViewModel =
@@ -57,7 +58,7 @@ export type WeeklyViewModel =
 export type WeeklyViewOptions = Readonly<{
   instant?: Date | number | string;
   selectedWeekStart?: string;
-  weekStartsOn?: 0 | 1;
+  weekStartsOn?: WeekStartsOn;
 }>;
 
 const weeklyHabitSelection =

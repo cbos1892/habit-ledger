@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getCurrentTimeZoneContext } from "../../../lib/profile";
+import { getCurrentProfile } from "../../../lib/profile";
 import { getWeeklyViewModel } from "../../../lib/week";
 import WeekPage from "./page";
 import { WeekView } from "./week-view";
 
 vi.mock("../../../lib/profile", () => ({
-  getCurrentTimeZoneContext: vi.fn(),
+  getCurrentProfile: vi.fn(),
 }));
 vi.mock("../../../lib/week", () => ({
   getWeeklyViewModel: vi.fn(),
@@ -17,9 +17,12 @@ vi.mock("./completion-actions", () => ({
 
 describe("Week page", () => {
   it("loads the current user's local weekly view model", async () => {
-    vi.mocked(getCurrentTimeZoneContext).mockResolvedValue({
+    vi.mocked(getCurrentProfile).mockResolvedValue({
       id: "user-123",
       time_zone: "America/New_York",
+      time_zone_confirmed_at: null,
+      time_zone_source: "automatic",
+      week_starts_on: 1,
     });
     vi.mocked(getWeeklyViewModel).mockResolvedValue({
       currentLocalDate: "2026-08-11",
@@ -47,6 +50,7 @@ describe("Week page", () => {
       "America/New_York",
       {
         selectedWeekStart: undefined,
+        weekStartsOn: 1,
       },
     );
     expect(result.type).toBe(WeekView);
@@ -54,9 +58,12 @@ describe("Week page", () => {
   });
 
   it("loads the URL-selected local week", async () => {
-    vi.mocked(getCurrentTimeZoneContext).mockResolvedValue({
+    vi.mocked(getCurrentProfile).mockResolvedValue({
       id: "user-123",
       time_zone: "America/New_York",
+      time_zone_confirmed_at: null,
+      time_zone_source: "automatic",
+      week_starts_on: 0,
     });
     vi.mocked(getWeeklyViewModel).mockResolvedValue({
       currentLocalDate: "2026-08-11",
@@ -74,7 +81,7 @@ describe("Week page", () => {
       startDate: "2026-08-03",
       status: "empty",
       timeZone: "America/New_York",
-      weekStartsOn: 1,
+      weekStartsOn: 0,
     });
 
     await WeekPage({
@@ -86,6 +93,7 @@ describe("Week page", () => {
       "America/New_York",
       {
         selectedWeekStart: "2026-08-03",
+        weekStartsOn: 0,
       },
     );
   });

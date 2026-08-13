@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(29);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select col_is_pk('public', 'profiles', 'id', 'profiles.id is the primary key');
@@ -27,6 +27,19 @@ select col_not_null(
   'profiles',
   'time_zone_source',
   'time-zone selection source is required'
+);
+select col_type_is(
+  'public',
+  'profiles',
+  'week_starts_on',
+  'smallint',
+  'week start is stored as a small integer'
+);
+select col_not_null(
+  'public',
+  'profiles',
+  'week_starts_on',
+  'week start is required'
 );
 select col_not_null('public', 'profiles', 'created_at', 'created_at is required');
 select col_not_null('public', 'profiles', 'updated_at', 'updated_at is required');
@@ -98,6 +111,16 @@ select ok(
   'new profiles require explicit time-zone confirmation'
 );
 
+select is(
+  (
+    select week_starts_on
+    from public.profiles
+    where id = '11111111-1111-4111-8111-111111111111'
+  ),
+  1::smallint,
+  'new profiles default to Monday-start weeks'
+);
+
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
@@ -110,6 +133,11 @@ select results_eq(
 select lives_ok(
   $$update public.profiles set time_zone = 'America/New_York', time_zone_confirmed_at = now(), time_zone_source = 'manual' where id = '11111111-1111-4111-8111-111111111111'$$,
   'a user can update their own time zone'
+);
+
+select lives_ok(
+  $$update public.profiles set week_starts_on = 0 where id = '11111111-1111-4111-8111-111111111111'$$,
+  'a user can choose Sunday-start weeks'
 );
 
 select ok(
@@ -149,6 +177,13 @@ select throws_ok(
   '23514',
   'new row for relation "profiles" violates check constraint "profiles_time_zone_is_valid"',
   'invalid time zones are rejected by the database'
+);
+
+select throws_ok(
+  $$update public.profiles set week_starts_on = 2 where id = '11111111-1111-4111-8111-111111111111'$$,
+  '23514',
+  'new row for relation "profiles" violates check constraint "profiles_week_starts_on_is_valid"',
+  'invalid week starts are rejected by the database'
 );
 
 select throws_ok(

@@ -1,4 +1,11 @@
 export const DEFAULT_TIME_ZONE = "UTC";
+export const DEFAULT_WEEK_START = 1;
+
+export type WeekStartsOn = 0 | 1;
+
+export function isWeekStartsOn(value: unknown): value is WeekStartsOn {
+  return value === 0 || value === 1;
+}
 
 export function isSupportedTimeZone(value: string): boolean {
   if (!value || value.length > 100) return false;
@@ -71,7 +78,7 @@ export function addLocalDateDays(localDate: string, days: number): string {
 
 export function getLocalWeekStartDate(
   localDate: string,
-  weekStartsOn: 0 | 1 = 1,
+  weekStartsOn: WeekStartsOn = DEFAULT_WEEK_START,
 ): string {
   const date = new Date(`${localDate}T00:00:00.000Z`);
 
@@ -89,7 +96,7 @@ export function getLocalWeekStartDate(
 
 export function getLocalWeekDateKeysFromDate(
   localDate: string,
-  weekStartsOn: 0 | 1 = 1,
+  weekStartsOn: WeekStartsOn = DEFAULT_WEEK_START,
 ): readonly string[] {
   const start = getLocalWeekStartDate(localDate, weekStartsOn);
 
@@ -101,7 +108,7 @@ export function getLocalWeekDateKeysFromDate(
 export function getLocalWeekDateKeys(
   instant: Date | number | string,
   timeZone: string,
-  weekStartsOn: 0 | 1 = 1,
+  weekStartsOn: WeekStartsOn = DEFAULT_WEEK_START,
 ): readonly string[] {
   const localDate = toLocalDateKey(instant, timeZone);
 
