@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { getNavigationItem } from "../../../lib/navigation";
-import { getCurrentTimeZoneContext } from "../../../lib/profile";
+import { getCurrentProfile } from "../../../lib/profile";
 import { getWeeklyViewModel } from "../../../lib/week";
 import { WeekView } from "./week-view";
 
@@ -18,10 +18,11 @@ export default async function WeekPage({
   searchParams: Promise<{ week?: string | string[] }>;
 }) {
   const requestedWeek = (await searchParams).week;
-  const context = await getCurrentTimeZoneContext();
-  const week = await getWeeklyViewModel(context.id, context.time_zone, {
+  const profile = await getCurrentProfile();
+  const week = await getWeeklyViewModel(profile.id, profile.time_zone, {
     selectedWeekStart:
       typeof requestedWeek === "string" ? requestedWeek : undefined,
+    weekStartsOn: profile.week_starts_on,
   });
 
   return <WeekView week={week} />;

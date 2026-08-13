@@ -80,7 +80,9 @@ export default async function SetupPage({
         />
       </section>
 
-      <Link href="/settings/time-zone">Advanced settings</Link>
+      <Link className={styles.advancedSettingsLink} href="/settings/time-zone">
+        Advanced settings <span aria-hidden="true">→</span>
+      </Link>
     </section>
   );
 }

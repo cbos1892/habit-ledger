@@ -76,6 +76,7 @@ describe("profile access", () => {
         time_zone: "America/New_York",
         time_zone_confirmed_at: "2026-08-06T20:00:00.000Z",
         time_zone_source: "automatic",
+        week_starts_on: 1,
       },
       error: null,
     });
@@ -83,7 +84,7 @@ describe("profile access", () => {
     const profile = await getProfile("user-123");
 
     expect(select).toHaveBeenCalledWith(
-      "id, time_zone, time_zone_confirmed_at, time_zone_source",
+      "id, time_zone, time_zone_confirmed_at, time_zone_source, week_starts_on",
     );
     expect(eq).toHaveBeenCalledWith("id", "user-123");
     expect(Object.isFrozen(profile)).toBe(true);
@@ -97,6 +98,7 @@ describe("profile access", () => {
         time_zone: "America/New_York",
         time_zone_confirmed_at: "2026-08-06T20:00:00.000Z",
         time_zone_source: "automatic",
+        week_starts_on: 1,
       },
       error: null,
     });
@@ -117,6 +119,7 @@ describe("profile access", () => {
         time_zone: "America/New_York",
         time_zone_confirmed_at: "2026-08-06T20:00:00.000Z",
         time_zone_source: "automatic",
+        week_starts_on: 1,
       },
       error: null,
     });
@@ -143,6 +146,7 @@ describe("profile access", () => {
         time_zone: "UTC",
         time_zone_confirmed_at: null,
         time_zone_source: "automatic",
+        week_starts_on: 1,
       },
       error: null,
     });
@@ -162,5 +166,22 @@ describe("profile access", () => {
       time_zone: "America/Chicago",
     });
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid persisted week-start value", async () => {
+    single.mockResolvedValue({
+      data: {
+        id: "user-123",
+        time_zone: "UTC",
+        time_zone_confirmed_at: null,
+        time_zone_source: "automatic",
+        week_starts_on: 2,
+      },
+      error: null,
+    });
+
+    await expect(getProfile("user-123")).rejects.toThrow(
+      "Unable to load the current user's profile.",
+    );
   });
 });

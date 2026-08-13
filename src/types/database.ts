@@ -133,6 +133,7 @@ export type Database = {
           time_zone_confirmed_at: string | null;
           time_zone_source: string;
           updated_at: string;
+          week_starts_on: number;
         };
         Insert: {
           created_at?: string;
@@ -141,6 +142,7 @@ export type Database = {
           time_zone_confirmed_at?: string | null;
           time_zone_source?: string;
           updated_at?: string;
+          week_starts_on?: number;
         };
         Update: {
           created_at?: string;
@@ -149,6 +151,7 @@ export type Database = {
           time_zone_confirmed_at?: string | null;
           time_zone_source?: string;
           updated_at?: string;
+          week_starts_on?: number;
         };
         Relationships: [];
       };
