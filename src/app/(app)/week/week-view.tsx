@@ -64,6 +64,18 @@ type OptimisticCellUpdate = Readonly<{
   localDate: string;
 }>;
 
+type Progress = Readonly<{
+  completed: number;
+  total: number;
+}>;
+
+type Celebration = Readonly<{
+  dayDates: ReadonlySet<string>;
+  message: string;
+  mutationKey: string;
+  rowIds: ReadonlySet<string>;
+}>;
+
 function updateOptimisticCell(
   week: WeeklyViewModel,
   update: OptimisticCellUpdate,
@@ -107,11 +119,35 @@ function getRowProgress(row: WeeklyHabitRow) {
   };
 }
 
+function getDayProgress(
+  rows: readonly WeeklyHabitRow[],
+  localDate: string,
+): Progress {
+  const scheduledCells = rows.flatMap((row) =>
+    row.cells.filter(
+      (cell) => cell.localDate === localDate && cell.state !== "not-scheduled",
+    ),
+  );
+
+  return {
+    completed: scheduledCells.filter(({ state }) => state === "completed")
+      .length,
+    total: scheduledCells.length,
+  };
+}
+
+function isComplete({ completed, total }: Progress) {
+  return total > 0 && completed === total;
+}
+
 function HabitRow({
   currentLocalDate,
   mutateCompletion,
   pendingCells,
   row,
+  celebratingDayDates,
+  celebratingRowIds,
+  perfectDayDates,
 }: {
   currentLocalDate: string;
   mutateCompletion: (
@@ -121,11 +157,18 @@ function HabitRow({
   ) => void;
   pendingCells: ReadonlySet<string>;
   row: WeeklyHabitRow;
+  celebratingDayDates: ReadonlySet<string>;
+  celebratingRowIds: ReadonlySet<string>;
+  perfectDayDates: ReadonlySet<string>;
 }) {
   const progress = getRowProgress(row);
+  const complete = isComplete(progress);
 
   return (
-    <tr>
+    <tr
+      data-celebrating={celebratingRowIds.has(row.id)}
+      data-complete={complete}
+    >
       <th className={styles.habitHeader} data-color={row.color} scope="row">
         <span className={styles.habitIdentity}>
           <span className={styles.habitIcon} aria-hidden="true">
@@ -136,7 +179,32 @@ function HabitRow({
             className={styles.rowProgress}
             aria-label={`${progress.completed} of ${progress.total} scheduled days complete`}
           >
-            {progress.completed}/{progress.total}
+            <span className={styles.rowProgressCopy} aria-hidden="true">
+              <span>{complete ? "Week complete" : "Weekly progress"}</span>
+              <strong>
+                {progress.completed}/{progress.total}
+              </strong>
+            </span>
+            <span
+              className={styles.rowProgressTrack}
+              role="progressbar"
+              aria-label={`${row.name} weekly progress`}
+              aria-valuemin={0}
+              aria-valuemax={progress.total}
+              aria-valuenow={progress.completed}
+            >
+              <span
+                className={styles.rowProgressFill}
+                style={{
+                  width: `${Math.round((progress.completed / progress.total) * 100)}%`,
+                }}
+              />
+            </span>
+            {complete ? (
+              <span className={styles.rowMilestone} aria-hidden="true">
+                ✓ Week
+              </span>
+            ) : null}
           </span>
         </span>
       </th>
@@ -157,6 +225,8 @@ function HabitRow({
         return (
           <td
             className={styles.cell}
+            data-celebrating={celebratingDayDates.has(cell.localDate)}
+            data-perfect={perfectDayDates.has(cell.localDate)}
             data-state={cell.state}
             data-timing={timing}
             key={cell.localDate}
@@ -202,6 +272,7 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
     new Set(),
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
   const rangeLabel = `${rangeDateFormatter.format(parseLocalDate(optimisticWeek.startDate))}–${rangeDateFormatter.format(parseLocalDate(optimisticWeek.endDate))}`;
   const currentWeekStart = getLocalWeekStartDate(
     optimisticWeek.currentLocalDate,
@@ -210,6 +281,17 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
   const previousWeekStart = addLocalDateDays(optimisticWeek.startDate, -7);
   const nextWeekStart = addLocalDateDays(optimisticWeek.startDate, 7);
   const isCurrentWeek = optimisticWeek.startDate === currentWeekStart;
+  const dayProgress = new Map(
+    optimisticWeek.localDates.map((localDate) => [
+      localDate,
+      getDayProgress(optimisticWeek.rows, localDate),
+    ]),
+  );
+  const perfectDayDates = new Set(
+    [...dayProgress]
+      .filter(([, progress]) => isComplete(progress))
+      .map(([localDate]) => localDate),
+  );
 
   useEffect(() => {
     if (!notice) return;
@@ -218,6 +300,14 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
 
     return () => window.clearTimeout(timeout);
   }, [notice]);
+
+  useEffect(() => {
+    if (!celebration) return;
+
+    const timeout = window.setTimeout(() => setCelebration(null), 1800);
+
+    return () => window.clearTimeout(timeout);
+  }, [celebration]);
 
   function mutateCompletion(
     habitId: string,
@@ -230,6 +320,44 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
 
     setNotice(null);
     setPendingCells((current) => new Set(current).add(cellKey));
+
+    const previousRow = optimisticWeek.rows.find(({ id }) => id === habitId);
+    const nextWeek = updateOptimisticCell(optimisticWeek, {
+      completed,
+      habitId,
+      localDate,
+    });
+    const nextRow = nextWeek.rows.find(({ id }) => id === habitId);
+    const completedRow =
+      completed &&
+      previousRow !== undefined &&
+      nextRow !== undefined &&
+      !isComplete(getRowProgress(previousRow)) &&
+      isComplete(getRowProgress(nextRow));
+    const completedDay =
+      completed &&
+      !isComplete(getDayProgress(optimisticWeek.rows, localDate)) &&
+      isComplete(getDayProgress(nextWeek.rows, localDate));
+
+    if (completedRow || completedDay) {
+      const messages = [];
+
+      if (completedRow && nextRow) {
+        messages.push(`${nextRow.name}’s week is complete.`);
+      }
+      if (completedDay) {
+        messages.push(
+          `${shortDayFormatter.format(parseLocalDate(localDate))} is a perfect scheduled day.`,
+        );
+      }
+
+      setCelebration({
+        dayDates: new Set(completedDay ? [localDate] : []),
+        message: messages.join(" "),
+        mutationKey: cellKey,
+        rowIds: new Set(completedRow ? [habitId] : []),
+      });
+    }
 
     startTransition(async () => {
       setOptimisticCell({ completed, habitId, localDate });
@@ -246,7 +374,12 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
         };
       }
 
-      if (result.status === "error") setNotice(result.message);
+      if (result.status === "error") {
+        setNotice(result.message);
+        setCelebration((current) =>
+          current?.mutationKey === cellKey ? null : current,
+        );
+      }
 
       setPendingCells((current) => {
         const next = new Set(current);
@@ -258,6 +391,9 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
 
   return (
     <div className={styles.page}>
+      <div className={styles.srOnly} aria-atomic="true" aria-live="polite">
+        {celebration?.message}
+      </div>
       <header className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Seven-day view</p>
@@ -382,6 +518,8 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                     return (
                       <th
                         className={styles.dayHeader}
+                        data-celebrating={celebration?.dayDates.has(localDate)}
+                        data-perfect={perfectDayDates.has(localDate)}
                         data-timing={timing}
                         key={localDate}
                         scope="col"
@@ -396,6 +534,14 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                           {fullDateFormatter.format(date)}
                           {timing === "today" ? ", today" : ""}
                         </span>
+                        {perfectDayDates.has(localDate) ? (
+                          <span
+                            className={styles.dayMilestone}
+                            aria-label="Perfect scheduled day"
+                          >
+                            <span aria-hidden="true">★</span> Perfect
+                          </span>
+                        ) : null}
                       </th>
                     );
                   })}
@@ -409,6 +555,11 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                     mutateCompletion={mutateCompletion}
                     pendingCells={pendingCells}
                     row={row}
+                    celebratingDayDates={
+                      celebration?.dayDates ?? new Set<string>()
+                    }
+                    celebratingRowIds={celebration?.rowIds ?? new Set<string>()}
+                    perfectDayDates={perfectDayDates}
                   />
                 ))}
               </tbody>

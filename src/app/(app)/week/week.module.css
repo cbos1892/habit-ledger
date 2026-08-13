@@ -229,10 +229,57 @@
 }
 
 .rowProgress {
+  display: grid;
+  width: 3.9rem;
+  gap: var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--text-xs);
+  font-size: 0.65rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
+}
+
+.rowProgressCopy {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.rowProgressCopy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowProgressCopy strong {
+  color: var(--color-text);
+}
+
+.rowProgressTrack {
+  overflow: hidden;
+  height: 0.3rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(
+    in srgb,
+    var(--color-success) 18%,
+    var(--color-surface)
+  );
+}
+
+.rowProgressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-success);
+  transition: width var(--duration-normal) var(--ease-standard);
+}
+
+.rowMilestone {
+  color: var(--color-success);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .habitIcon {
@@ -284,6 +331,24 @@
   color: var(--color-accent-hover);
 }
 
+.dayHeader[data-perfect="true"] {
+  box-shadow: inset 0 -3px var(--color-success);
+  background: color-mix(
+    in srgb,
+    var(--color-success-soft) 62%,
+    var(--color-surface)
+  );
+}
+
+.dayMilestone {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-success);
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
 .cell {
   height: 4.75rem;
   border-top: 1px solid var(--color-border);
@@ -298,6 +363,36 @@
     var(--color-accent-soft) 56%,
     var(--color-surface)
   );
+}
+
+.cell[data-perfect="true"] {
+  background: color-mix(
+    in srgb,
+    var(--color-success-soft) 34%,
+    var(--color-surface)
+  );
+}
+
+.grid tr[data-complete="true"] .habitHeader,
+.grid tr[data-complete="true"] .cell {
+  border-top-color: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    var(--color-border)
+  );
+}
+
+.grid tr[data-complete="true"] .habitHeader {
+  background: color-mix(
+    in srgb,
+    var(--color-success-soft) 58%,
+    var(--color-surface)
+  );
+}
+
+.grid tr[data-complete="true"] .habitIcon {
+  outline: 2px solid var(--color-success);
+  outline-offset: 2px;
 }
 
 .cellMark {
@@ -365,6 +460,23 @@
 .cell[data-state="completed"][data-timing="future"] .cellMark {
   border-style: solid;
   opacity: 1;
+}
+
+@keyframes milestoneGlow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+  45% {
+    box-shadow: inset 0 0 0 3px
+      color-mix(in srgb, var(--color-success) 58%, transparent);
+  }
+}
+
+.grid tr[data-celebrating="true"] .habitHeader,
+.dayHeader[data-celebrating="true"],
+.cell[data-celebrating="true"] {
+  animation: milestoneGlow 700ms var(--ease-standard) 1;
 }
 
 .empty {
@@ -454,5 +566,18 @@
   .cell {
     width: 4.75rem;
     min-width: 4.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowProgressFill {
+    transition: none;
+  }
+
+  .grid tr[data-celebrating="true"] .habitHeader,
+  .dayHeader[data-celebrating="true"],
+  .cell[data-celebrating="true"] {
+    animation: none;
+    box-shadow: inset 0 0 0 2px var(--color-success);
   }
 }
