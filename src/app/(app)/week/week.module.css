@@ -155,25 +155,15 @@
 .gridFrame {
   --week-header-height: 4.5rem;
   --week-sticky-column-width: 5.5rem;
+  --week-days-min-width: 29.75rem;
+  --week-pinned-surface: color-mix(
+    in srgb,
+    var(--color-surface) 65%,
+    var(--color-surface-subtle)
+  );
   position: relative;
   min-width: 0;
   timeline-scope: --week-horizontal-scroll;
-}
-
-.gridFrame::after {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--week-sticky-column-width) - 1px);
-  z-index: 5;
-  width: 3px;
-  background: linear-gradient(
-    to right,
-    var(--color-surface) 0 2px,
-    var(--color-border) 2px 3px
-  );
-  content: "";
-  pointer-events: none;
 }
 
 .stickyGridHeader {
@@ -194,7 +184,7 @@
   height: 100%;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  background: var(--color-surface);
+  background: var(--week-pinned-surface);
 }
 
 .stickyCornerOverlay {
@@ -206,7 +196,7 @@
   width: var(--week-sticky-column-width);
   height: var(--week-header-height);
   align-items: center;
-  background: var(--color-surface);
+  background: var(--week-pinned-surface);
   padding: var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--text-xs);
@@ -219,7 +209,7 @@
   overflow: hidden;
   width: 100%;
   height: 100%;
-  background: var(--color-surface);
+  background: var(--week-pinned-surface);
   container-type: inline-size;
 }
 
@@ -254,7 +244,8 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
   scrollbar-color: var(--color-border-strong) transparent;
-  overscroll-behavior-inline: contain;
+  overscroll-behavior-x: none;
+  overscroll-behavior-inline: none;
   scroll-timeline: --week-horizontal-scroll inline;
 }
 
@@ -264,10 +255,18 @@
 }
 
 .grid {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  min-width: calc(var(--week-sticky-column-width) + var(--week-days-min-width));
   border-spacing: 0;
   table-layout: fixed;
+}
+
+.habitColumn {
+  width: var(--week-sticky-column-width);
+}
+
+.dayColumn {
+  width: auto;
 }
 
 .cornerHeader,
@@ -278,7 +277,8 @@
   width: var(--week-sticky-column-width);
   min-width: var(--week-sticky-column-width);
   max-width: var(--week-sticky-column-width);
-  background: var(--color-surface);
+  box-sizing: border-box;
+  background: var(--week-pinned-surface);
   text-align: left;
 }
 
@@ -361,8 +361,6 @@
 
 .dayHeader,
 .cell {
-  width: 4.25rem;
-  min-width: 4.25rem;
   text-align: center;
 }
 
@@ -370,7 +368,7 @@
   height: 4.5rem;
   border-left: 1px solid
     color-mix(in srgb, var(--color-border) 60%, transparent);
-  background: var(--color-surface);
+  background: var(--week-pinned-surface);
   padding: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--text-xs);
@@ -434,15 +432,6 @@
     in srgb,
     var(--color-success-soft) 34%,
     var(--color-surface)
-  );
-}
-
-.grid tr[data-complete="true"] .habitHeader,
-.grid tr[data-complete="true"] .cell {
-  border-top-color: color-mix(
-    in srgb,
-    var(--color-success) 42%,
-    var(--color-border)
   );
 }
 
@@ -621,17 +610,16 @@
 }
 
 @media (min-width: 36rem) {
+  .gridFrame {
+    --week-days-min-width: 33.25rem;
+  }
+
   .summary {
     display: block;
   }
   .gridHeading {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
-  }
-  .dayHeader,
-  .cell {
-    width: 4.75rem;
-    min-width: 4.75rem;
   }
 }
 

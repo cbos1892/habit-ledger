@@ -61,7 +61,7 @@ describe("Week view", () => {
   });
 
   it("renders a semantic seven-day grid with emoji-only visual identity", () => {
-    render(<WeekView week={week} />);
+    const { container } = render(<WeekView week={week} />);
 
     const table = screen.getByRole("table", {
       name: "Habit completion status for Aug 10–Aug 16",
@@ -77,6 +77,19 @@ describe("Week view", () => {
     expect(
       screen.getByRole("region", { name: "Scrollable weekly habit grid" }),
     ).toHaveAttribute("tabindex", "0");
+
+    const columnGroups = container.querySelectorAll(
+      'colgroup[data-week-columns="true"]',
+    );
+    expect(columnGroups).toHaveLength(2);
+    columnGroups.forEach((columnGroup) => {
+      expect(
+        columnGroup.querySelectorAll('col[data-week-column="habit"]'),
+      ).toHaveLength(1);
+      expect(
+        columnGroup.querySelectorAll('col[data-week-column="day"]'),
+      ).toHaveLength(7);
+    });
   });
 
   it("uses grid navigation as the sole source for pinned header scrolling", () => {
@@ -99,12 +112,44 @@ describe("Week view", () => {
     expect(stickyHeader).toHaveAttribute("aria-hidden", "true");
     expect(headerTrack).not.toBeNull();
 
+    Object.defineProperties(gridScroller, {
+      clientWidth: { configurable: true, value: 320 },
+      scrollWidth: { configurable: true, value: 640 },
+    });
+
     gridScroller.scrollLeft = 72;
     fireEvent.scroll(gridScroller);
     expect(headerTrack?.style.getPropertyValue("--week-scroll-offset")).toBe(
       "-72px",
     );
   });
+
+  it.each([
+    { expectedOffset: "0px", reportedScrollLeft: -48 },
+    { expectedOffset: "-320px", reportedScrollLeft: 368 },
+  ])(
+    "clamps a reported $reportedScrollLeft scroll position to $expectedOffset",
+    ({ expectedOffset, reportedScrollLeft }) => {
+      const { container } = render(<WeekView week={week} />);
+      const gridScroller = screen.getByRole("region", {
+        name: "Scrollable weekly habit grid",
+      });
+      const headerTrack = container.querySelector<HTMLElement>(
+        '[data-week-header-track="true"]',
+      );
+
+      Object.defineProperties(gridScroller, {
+        clientWidth: { configurable: true, value: 320 },
+        scrollWidth: { configurable: true, value: 640 },
+      });
+      gridScroller.scrollLeft = reportedScrollLeft;
+      fireEvent.scroll(gridScroller);
+
+      expect(headerTrack?.style.getPropertyValue("--week-scroll-offset")).toBe(
+        expectedOffset,
+      );
+    },
+  );
 
   it("links to adjacent local weeks and prevents future-week navigation", () => {
     render(<WeekView week={week} />);
@@ -380,6 +425,11 @@ describe("Week view", () => {
       "data-color",
       "fern",
     );
+    expect(
+      screen.getByRole("button", {
+        name: /Morning walk, Monday, August 10, 2026, completed/,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(
       screen.getByRole("columnheader", {
         name: /Monday, August 10, 2026.*Perfect scheduled day/,
