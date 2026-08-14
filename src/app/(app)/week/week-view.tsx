@@ -113,6 +113,15 @@ function getCellKey(habitId: string, localDate: string) {
   return `${habitId}:${localDate}`;
 }
 
+function getClampedScrollLeft(scroller: HTMLElement) {
+  const maxScrollLeft = Math.max(
+    scroller.scrollWidth - scroller.clientWidth,
+    0,
+  );
+
+  return Math.min(Math.max(scroller.scrollLeft, 0), maxScrollLeft);
+}
+
 function getRowProgress(row: WeeklyHabitRow) {
   const scheduledCells = row.cells.filter(
     ({ state }) => state !== "not-scheduled",
@@ -187,6 +196,17 @@ function DayHeaders({
       </th>
     );
   });
+}
+
+function WeekColumnGroup() {
+  return (
+    <colgroup data-week-columns="true">
+      <col className={styles.habitColumn} data-week-column="habit" />
+      {Array.from({ length: 7 }, (_, index) => (
+        <col className={styles.dayColumn} data-week-column="day" key={index} />
+      ))}
+    </colgroup>
+  );
 }
 
 function HabitRow({
@@ -543,6 +563,7 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                     data-week-header-track="true"
                     ref={headerTrackRef}
                   >
+                    <WeekColumnGroup />
                     <thead>
                       <tr>
                         <th className={styles.cornerHeader} scope="col">
@@ -566,14 +587,17 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
               role="region"
               aria-label="Scrollable weekly habit grid"
               onScroll={(event) => {
+                const scrollLeft = getClampedScrollLeft(event.currentTarget);
+
                 headerTrackRef.current?.style.setProperty(
                   "--week-scroll-offset",
-                  `${-event.currentTarget.scrollLeft}px`,
+                  `${-scrollLeft}px`,
                 );
               }}
               tabIndex={0}
             >
               <table className={styles.grid}>
+                <WeekColumnGroup />
                 <caption className={styles.srOnly}>
                   Habit completion status for {rangeLabel}
                 </caption>
