@@ -19,7 +19,7 @@ type HabitListProps = {
 
 function HabitIdentity({ habit }: { habit: Habit }) {
   return (
-    <>
+    <div className={styles.habitIdentityGroup}>
       <span className={styles.habitIcon} aria-hidden="true">
         {habit.icon}
       </span>
@@ -33,7 +33,7 @@ function HabitIdentity({ habit }: { habit: Habit }) {
         data-color={habit.color}
         role="img"
       />
-    </>
+    </div>
   );
 }
 
@@ -56,7 +56,11 @@ export function HabitList({
             <li key={habit.id}>
               <Card className={styles.habitCard} padding="compact">
                 <HabitIdentity habit={habit} />
-                <div className={styles.habitControls}>
+                <div
+                  aria-label={`Controls for ${habit.name}`}
+                  className={styles.habitControls}
+                  role="group"
+                >
                   <div
                     aria-label={`Reorder ${habit.name}`}
                     className={styles.moveControls}
@@ -136,12 +140,18 @@ export function HabitList({
               <li key={habit.id}>
                 <Card className={styles.archivedHabitCard} padding="compact">
                   <HabitIdentity habit={habit} />
-                  <form action={restoreAction}>
-                    <HabitId id={habit.id} />
-                    <Button size="small" type="submit" variant="secondary">
-                      Restore
-                    </Button>
-                  </form>
+                  <div
+                    aria-label={`Controls for ${habit.name}`}
+                    className={styles.habitControls}
+                    role="group"
+                  >
+                    <form action={restoreAction}>
+                      <HabitId id={habit.id} />
+                      <Button size="small" type="submit" variant="secondary">
+                        Restore
+                      </Button>
+                    </form>
+                  </div>
                 </Card>
               </li>
             ))}
