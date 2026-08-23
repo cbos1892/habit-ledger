@@ -365,6 +365,9 @@
 }
 
 .dayHeader {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
   height: 4.5rem;
   border-left: 1px solid
     color-mix(in srgb, var(--color-border) 60%, transparent);
@@ -403,12 +406,17 @@
 }
 
 .dayMilestone {
+  position: absolute;
+  right: var(--space-1);
+  bottom: 0.3rem;
+  left: var(--space-1);
   display: block;
-  margin-top: var(--space-1);
   color: var(--color-success);
   font-size: 0.55rem;
   font-weight: 900;
   letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .cell {

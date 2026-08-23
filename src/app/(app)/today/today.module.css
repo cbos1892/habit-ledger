@@ -104,6 +104,20 @@
     inset 0 0.2rem var(--color-accent),
     var(--shadow-sm);
   padding: clamp(var(--space-3), 3vw, var(--space-4));
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+.progress[data-perfect="true"] {
+  border-color: color-mix(
+    in srgb,
+    var(--color-success) 48%,
+    var(--color-border)
+  );
+  box-shadow:
+    inset 0 0.2rem var(--color-success),
+    var(--shadow-sm);
 }
 
 .progressCopy {
@@ -115,6 +129,50 @@
 
 .progressText {
   min-width: 0;
+}
+
+.progressHeading {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.progressHeading .progressLabel {
+  margin: 0;
+}
+
+.progressMilestone {
+  display: inline-flex;
+  min-height: 1.25rem;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-2);
+  color: var(--color-success);
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  opacity: 0;
+  text-transform: uppercase;
+  transform: scale(0.92);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-normal) var(--ease-standard);
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+.progressMilestone[data-visible="true"] {
+  border-color: color-mix(in srgb, var(--color-success) 42%, transparent);
+  background: var(--color-success-soft);
+  opacity: 1;
+  transform: scale(1);
+  visibility: visible;
 }
 
 .progressMessage {
@@ -152,6 +210,37 @@
   border-radius: inherit;
   background: var(--color-accent);
   transition: width var(--duration-normal) var(--ease-standard);
+}
+
+.progress[data-perfect="true"] .progressTrack {
+  background: color-mix(
+    in srgb,
+    var(--color-success) 20%,
+    var(--color-surface)
+  );
+}
+
+.progress[data-perfect="true"] .progressFill {
+  background: var(--color-success);
+}
+
+@keyframes perfectDayGlow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0.2rem var(--color-success),
+      var(--shadow-sm);
+  }
+  45% {
+    box-shadow:
+      inset 0 0.2rem var(--color-success),
+      0 0 0 0.25rem color-mix(in srgb, var(--color-success) 22%, transparent),
+      var(--shadow-lg);
+  }
+}
+
+.progress[data-celebrating="true"] {
+  animation: perfectDayGlow 700ms var(--ease-standard) 1;
 }
 
 .habits {
@@ -445,7 +534,28 @@
 
 @media (prefers-reduced-motion: reduce) {
   .habitCard,
-  .progressFill {
+  .progress,
+  .progressFill,
+  .progressMilestone {
     transition: none;
   }
+
+  .progress[data-celebrating="true"] {
+    animation: none;
+    box-shadow:
+      inset 0 0.2rem var(--color-success),
+      0 0 0 2px var(--color-success),
+      var(--shadow-sm);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

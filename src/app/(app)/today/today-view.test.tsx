@@ -118,11 +118,20 @@ describe("Today view", () => {
     expect(
       screen.getByText("All done for today. Nicely tended."),
     ).toBeInTheDocument();
+    expect(screen.getByText("Perfect day")).toBeVisible();
     expect(screen.getByRole("progressbar")).toHaveAttribute(
       "aria-valuenow",
       "1",
     );
     expect(screen.getByLabelText("1 of 1 habits complete")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar").closest("section")).toHaveAttribute(
+      "data-perfect",
+      "true",
+    );
+    expect(screen.getByRole("progressbar").closest("section")).toHaveAttribute(
+      "data-celebrating",
+      "false",
+    );
   });
 
   it("groups progress and the habits heading in one sticky stack", () => {
@@ -250,6 +259,17 @@ describe("Today view", () => {
       "aria-valuenow",
       "1",
     );
+    expect(screen.getByRole("progressbar").closest("section")).toHaveAttribute(
+      "data-perfect",
+      "true",
+    );
+    expect(screen.getByRole("progressbar").closest("section")).toHaveAttribute(
+      "data-celebrating",
+      "true",
+    );
+    expect(
+      screen.getByText("Perfect day. All scheduled habits are complete."),
+    ).toBeInTheDocument();
 
     await act(async () => {
       resolveMutation?.({
@@ -282,6 +302,14 @@ describe("Today view", () => {
       expect(
         screen.getByRole("button", { name: "Morning walk, not complete" }),
       ).toHaveAttribute("aria-pressed", "false"),
+    );
+    expect(screen.getByRole("progressbar").closest("section")).toHaveAttribute(
+      "data-perfect",
+      "false",
+    );
+    expect(screen.getByRole("progressbar").closest("section")).toHaveAttribute(
+      "data-celebrating",
+      "false",
     );
   });
 

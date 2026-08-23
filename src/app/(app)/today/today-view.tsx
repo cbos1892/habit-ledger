@@ -55,18 +55,41 @@ function formatLocalDate(localDate: string) {
   }).format(new Date(`${localDate}T00:00:00Z`));
 }
 
-function Progress({ completed, total }: { completed: number; total: number }) {
+function Progress({
+  celebrating,
+  completed,
+  total,
+}: {
+  celebrating: boolean;
+  completed: number;
+  total: number;
+}) {
   const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const perfect = completed === total && total > 0;
 
   return (
-    <section className={styles.progress} aria-labelledby="today-progress-title">
+    <section
+      className={styles.progress}
+      aria-labelledby="today-progress-title"
+      data-celebrating={celebrating}
+      data-perfect={perfect}
+    >
       <div className={styles.progressCopy}>
         <div className={styles.progressText}>
-          <p className={styles.progressLabel} id="today-progress-title">
-            Daily progress
-          </p>
+          <div className={styles.progressHeading}>
+            <p className={styles.progressLabel} id="today-progress-title">
+              Daily progress
+            </p>
+            <span
+              aria-hidden="true"
+              className={styles.progressMilestone}
+              data-visible={perfect}
+            >
+              <span>★</span> Perfect day
+            </span>
+          </div>
           <p className={styles.progressMessage}>
-            {completed === total && total > 0
+            {perfect
               ? "All done for today. Nicely tended."
               : "A little progress is still progress."}
           </p>
@@ -103,6 +126,9 @@ export function TodayView({ today }: TodayViewProps) {
   );
   const [, startTransition] = useTransition();
   const [notice, setNotice] = useState<CompletionNotice | null>(null);
+  const [celebrationMutation, setCelebrationMutation] = useState<number | null>(
+    null,
+  );
   const [showScrollFade, setShowScrollFade] = useState(false);
   const latestMutationByHabit = useRef(new Map<string, number>());
   const mutationSequence = useRef(0);
@@ -131,6 +157,14 @@ export function TodayView({ today }: TodayViewProps) {
   }, [notice]);
 
   useEffect(() => {
+    if (celebrationMutation === null) return;
+
+    const timeout = window.setTimeout(() => setCelebrationMutation(null), 1800);
+
+    return () => window.clearTimeout(timeout);
+  }, [celebrationMutation]);
+
+  useEffect(() => {
     const sentinel = stickySentinelRef.current;
 
     if (!sentinel || typeof IntersectionObserver === "undefined") return;
@@ -151,8 +185,13 @@ export function TodayView({ today }: TodayViewProps) {
 
     const nextCompleted = !habit.completed;
     const mutationId = ++mutationSequence.current;
+    const completesToday =
+      nextCompleted &&
+      optimisticToday.totalCount > 0 &&
+      optimisticToday.completedCount + 1 === optimisticToday.totalCount;
     latestMutationByHabit.current.set(habitId, mutationId);
     setNotice(null);
+    setCelebrationMutation(completesToday ? mutationId : null);
 
     startTransition(async () => {
       setOptimisticCompletion({ habitId, completed: nextCompleted });
@@ -172,6 +211,9 @@ export function TodayView({ today }: TodayViewProps) {
       if (latestMutationByHabit.current.get(habitId) !== mutationId) return;
 
       if (result.status === "error") {
+        setCelebrationMutation((current) =>
+          current === mutationId ? null : current,
+        );
         setNotice({
           message: result.message,
         });
@@ -182,6 +224,11 @@ export function TodayView({ today }: TodayViewProps) {
 
   return (
     <div className={styles.page}>
+      <div className={styles.srOnly} aria-atomic="true" aria-live="polite">
+        {celebrationMutation === null
+          ? null
+          : "Perfect day. All scheduled habits are complete."}
+      </div>
       <header className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Daily check-in</p>
@@ -226,6 +273,7 @@ export function TodayView({ today }: TodayViewProps) {
             data-testid="today-sticky-stack"
           >
             <Progress
+              celebrating={celebrationMutation !== null}
               completed={optimisticToday.completedCount}
               total={optimisticToday.totalCount}
             />
