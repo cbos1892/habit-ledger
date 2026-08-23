@@ -209,6 +209,7 @@
   gap: var(--space-3);
   margin: 0;
   padding: 0;
+  container-type: inline-size;
   list-style: none;
 }
 
@@ -217,9 +218,18 @@
   gap: var(--space-5);
 }
 
-.habitCard {
+.habitCard,
+.archivedHabitCard {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.habitIdentityGroup {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--space-3);
   align-items: center;
 }
@@ -240,11 +250,13 @@
 
 .habitIdentity {
   display: grid;
+  min-width: 0;
   gap: var(--space-1);
 }
 
 .habitName {
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .habitMeta {
@@ -292,8 +304,7 @@
 }
 
 .moveControls form,
-.habitControls form,
-.archivedHabitCard form {
+.habitControls form {
   display: flex;
   margin: 0;
 }
@@ -332,17 +343,21 @@
   margin-bottom: var(--space-3);
 }
 
-.archivedHabitCard {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  gap: var(--space-3);
-  align-items: center;
-}
-
 .emptyArchive {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+@container (max-width: 48rem) {
+  .habitCard,
+  .archivedHabitCard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .habitControls {
+    justify-self: end;
+  }
 }
 
 @media (max-width: 32rem) {
@@ -351,27 +366,8 @@
     flex-direction: column;
   }
 
-  .habitCard {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .habitColor {
-    grid-column: 3;
-    grid-row: 1;
-  }
-
   .habitControls {
-    grid-column: 1 / -1;
     flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .archivedHabitCard {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .archivedHabitCard form {
-    grid-column: 1 / -1;
     justify-content: flex-end;
   }
 

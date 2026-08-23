@@ -64,13 +64,26 @@ describe("HabitList", () => {
     renderList();
 
     const items = screen.getAllByRole("listitem");
+    const morningControls = within(items[0]).getByRole("group", {
+      name: "Controls for Morning walk",
+    });
     expect(within(items[0]).getByText("Morning walk")).toBeVisible();
     expect(within(items[0]).getByText("🚶🌿✨")).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Move Morning walk up" }),
+      within(morningControls).getByRole("button", {
+        name: "Move Morning walk up",
+      }),
     ).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "Move Morning walk down" }),
+      within(morningControls).getByRole("button", {
+        name: "Move Morning walk down",
+      }),
+    ).toBeEnabled();
+    expect(
+      within(morningControls).getByRole("link", { name: "Edit" }),
+    ).toHaveAttribute("href", `/setup/habits/${activeHabits[0].id}/edit`);
+    expect(
+      within(morningControls).getByRole("button", { name: "Archive" }),
     ).toBeEnabled();
     expect(
       screen.getByRole("button", { name: "Move Read down" }),
@@ -92,8 +105,13 @@ describe("HabitList", () => {
   it("shows archived habits and offers restore", () => {
     renderList();
 
+    const archivedControls = screen.getByRole("group", {
+      name: "Controls for Meditate",
+    });
     expect(screen.getByText("Archived habits")).toBeVisible();
     expect(screen.getByText("Meditate")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Restore" })).toBeEnabled();
+    expect(
+      within(archivedControls).getByRole("button", { name: "Restore" }),
+    ).toBeEnabled();
   });
 });
