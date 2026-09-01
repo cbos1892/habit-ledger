@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
-import { RoutePlaceholder } from "../../../components/route-placeholder";
 import { getNavigationItem } from "../../../lib/navigation";
-import { getCurrentTimeZoneContext } from "../../../lib/profile";
+import { getCurrentProfile } from "../../../lib/profile";
+import { getStatisticsViewModel } from "../../../lib/stats";
+import { StatsView } from "./stats-view";
 
 const route = getNavigationItem("stats");
 
@@ -12,14 +13,12 @@ export const metadata: Metadata = {
 };
 
 export default async function StatsPage() {
-  await getCurrentTimeZoneContext();
-
-  return (
-    <RoutePlaceholder
-      eyebrow="Progress, gently"
-      title="Stats"
-      description={route.description}
-      nextStep="Simple insights will highlight patterns without turning progress into pressure."
-    />
+  const profile = await getCurrentProfile();
+  const statistics = await getStatisticsViewModel(
+    profile.id,
+    profile.time_zone,
+    { weekStartsOn: profile.week_starts_on },
   );
+
+  return <StatsView statistics={statistics} />;
 }
