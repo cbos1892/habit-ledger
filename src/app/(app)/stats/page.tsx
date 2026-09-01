@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import { getNavigationItem } from "../../../lib/navigation";
 import { getCurrentProfile } from "../../../lib/profile";
 import { getStatisticsViewModel } from "../../../lib/stats";
+import { HabitInsights } from "./habit-insights";
 import { StatsView } from "./stats-view";
+import { TrendChart } from "./trend-chart";
 
 const route = getNavigationItem("stats");
 
@@ -20,5 +22,19 @@ export default async function StatsPage() {
     { weekStartsOn: profile.week_starts_on },
   );
 
-  return <StatsView statistics={statistics} />;
+  return (
+    <StatsView
+      statistics={statistics}
+      trendSection={
+        statistics.status === "ready" ? (
+          <TrendChart weekly={statistics.weekly} />
+        ) : undefined
+      }
+      insightsSection={
+        statistics.status === "ready" ? (
+          <HabitInsights habits={statistics.habits} />
+        ) : undefined
+      }
+    />
+  );
 }

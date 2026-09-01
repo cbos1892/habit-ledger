@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { getCurrentProfile } from "../../../lib/profile";
 import { getStatisticsViewModel } from "../../../lib/stats";
+import { HabitInsights } from "./habit-insights";
 import StatsPage from "./page";
 import { StatsView } from "./stats-view";
+import { TrendChart } from "./trend-chart";
 
 vi.mock("../../../lib/profile", () => ({
   getCurrentProfile: vi.fn(),
@@ -34,7 +36,15 @@ describe("Stats page", () => {
       status: "ready",
       timeZone: "America/New_York",
       weekStartsOn: 0,
-      weekly: [],
+      weekly: Array.from({ length: 8 }, (_, index) => ({
+        completedCount: 1,
+        endDate: `2026-0${index + 1}-07`,
+        isCurrentWeek: index === 7,
+        isPartial: index === 7,
+        opportunityCount: 2,
+        percentage: 50,
+        startDate: `2026-0${index + 1}-01`,
+      })),
     });
 
     const result = await StatsPage();
@@ -47,6 +57,10 @@ describe("Stats page", () => {
     );
     expect(result.type).toBe(StatsView);
     expect(result.props.statistics.overall.percentage).toBe(64);
+    expect(result.props.trendSection.type).toBe(TrendChart);
+    expect(result.props.trendSection.props.weekly).toHaveLength(8);
+    expect(result.props.insightsSection.type).toBe(HabitInsights);
+    expect(result.props.insightsSection.props.habits).toEqual([]);
   });
 
   it("keeps a valid empty model distinct from a route failure", async () => {
@@ -77,5 +91,7 @@ describe("Stats page", () => {
 
     expect(result.type).toBe(StatsView);
     expect(result.props.statistics.status).toBe("no-habits");
+    expect(result.props.trendSection).toBeUndefined();
+    expect(result.props.insightsSection).toBeUndefined();
   });
 });
