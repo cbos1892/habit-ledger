@@ -261,11 +261,11 @@ export async function getStatisticsViewModel(
     }),
   );
   const status: StatisticsViewStatus =
-    habits.length === 0
-      ? "no-habits"
-      : overall.opportunityCount === 0
-        ? "no-opportunities"
-        : "ready";
+    overall.opportunityCount > 0
+      ? "ready"
+      : habits.length === 0
+        ? "no-habits"
+        : "no-opportunities";
 
   return Object.freeze({
     currentLocalDate,

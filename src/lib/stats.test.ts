@@ -277,6 +277,53 @@ describe("statistics view model", () => {
     });
   });
 
+  it("keeps recent history visible when the only habit has been archived", async () => {
+    finalOrder.mockResolvedValue({
+      data: [
+        habit({
+          archived_at: "2026-08-04T12:00:00.000Z",
+          completions: complete([
+            "2026-07-28",
+            "2026-07-29",
+            "2026-07-30",
+            "2026-07-31",
+            "2026-08-01",
+            "2026-08-02",
+            "2026-08-03",
+            "2026-08-04",
+          ]),
+          id: "archived",
+          name: "Archived",
+        }),
+      ],
+      error: null,
+    });
+
+    const result = await getStatisticsViewModel("user-123", "UTC", {
+      instant: "2026-08-10T12:00:00.000Z",
+    });
+
+    expect(result).toMatchObject({
+      habits: [],
+      overall: {
+        completedCount: 8,
+        opportunityCount: 8,
+        percentage: 100,
+      },
+      status: "ready",
+    });
+    expect(result.weekly[5]).toMatchObject({
+      completedCount: 6,
+      opportunityCount: 7,
+      percentage: 86,
+    });
+    expect(result.weekly[6]).toMatchObject({
+      completedCount: 2,
+      opportunityCount: 2,
+      percentage: 100,
+    });
+  });
+
   it("converts archive instants to the user's local calendar boundary", async () => {
     const archivedHabit = habit({
       archived_at: "2026-08-05T02:30:00.000Z",
