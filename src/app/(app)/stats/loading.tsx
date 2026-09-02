@@ -1,5 +1,5 @@
-import { RouteLoading } from "../../../components/route-loading/route-loading";
+import { StatsViewSkeleton } from "./stats-view";
 
 export default function StatsLoading() {
-  return <RouteLoading variant="stats" />;
+  return <StatsViewSkeleton />;
 }
