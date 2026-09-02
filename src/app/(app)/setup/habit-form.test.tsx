@@ -1,4 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { describe, expect, it, vi } from "vitest";
 
 import { HabitForm } from "./habit-form";
@@ -84,5 +86,61 @@ describe("HabitForm", () => {
     expect(screen.getByLabelText("Every day")).not.toBeChecked();
     expect(screen.getByLabelText("Thursday")).not.toBeChecked();
     expect(screen.getByLabelText("Monday")).toBeChecked();
+  });
+
+  it("supports keyboard schedule editing", async () => {
+    const user = userEvent.setup();
+    render(
+      <HabitForm
+        action={action}
+        initialValues={{
+          name: "Read",
+          icon: "📚",
+          color: "plum",
+          startDate: "2026-07-01",
+          weekdays: [1, 3, 5],
+        }}
+        mode="edit"
+      />,
+    );
+
+    const everyDay = screen.getByLabelText("Every day");
+    everyDay.focus();
+    await user.keyboard(" ");
+
+    expect(everyDay).toBeChecked();
+    expect(screen.getByLabelText("Tuesday")).toBeChecked();
+
+    const thursday = screen.getByLabelText("Thursday");
+    thursday.focus();
+    await user.keyboard(" ");
+
+    expect(thursday).not.toBeChecked();
+    expect(everyDay).not.toBeChecked();
+  });
+
+  it("has no detectable structural accessibility violations", async () => {
+    const { container } = render(
+      <HabitForm
+        action={action}
+        initialValues={{
+          name: "Read",
+          icon: "📚",
+          color: "plum",
+          startDate: "2026-07-01",
+          weekdays: [1, 3, 5],
+        }}
+        mode="edit"
+      />,
+    );
+
+    const results = await axe.run(container, {
+      rules: {
+        // JSDOM does not calculate the rendered colors needed by this rule.
+        "color-contrast": { enabled: false },
+      },
+    });
+
+    expect(results.violations.map(({ id }) => id)).toEqual([]);
   });
 });

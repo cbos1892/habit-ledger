@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { describe, expect, it, vi } from "vitest";
 
 import type { Habit } from "@/lib/habits";
@@ -48,7 +50,7 @@ function renderList() {
     restoreAction: vi.fn(async () => undefined),
   };
 
-  render(
+  const rendered = render(
     <HabitList
       activeHabits={activeHabits}
       archivedHabits={archivedHabits}
@@ -56,7 +58,7 @@ function renderList() {
     />,
   );
 
-  return actions;
+  return { ...actions, ...rendered };
 }
 
 describe("HabitList", () => {
@@ -113,5 +115,32 @@ describe("HabitList", () => {
     expect(
       within(archivedControls).getByRole("button", { name: "Restore" }),
     ).toBeEnabled();
+  });
+
+  it("keeps management controls reachable in a predictable keyboard order", async () => {
+    const user = userEvent.setup();
+    renderList();
+
+    await user.tab();
+    expect(
+      screen.getByRole("button", { name: "Move Morning walk down" }),
+    ).toHaveFocus();
+    await user.tab();
+    expect(screen.getAllByRole("link", { name: "Edit" })[0]).toHaveFocus();
+    await user.tab();
+    expect(screen.getAllByRole("button", { name: "Archive" })[0]).toHaveFocus();
+  });
+
+  it("has no detectable structural accessibility violations", async () => {
+    const { container } = renderList();
+
+    const results = await axe.run(container, {
+      rules: {
+        // JSDOM does not calculate the rendered colors needed by this rule.
+        "color-contrast": { enabled: false },
+      },
+    });
+
+    expect(results.violations.map(({ id }) => id)).toEqual([]);
   });
 });

@@ -144,6 +144,35 @@ describe("today view model", () => {
     });
   });
 
+  it("returns the same calm empty state when habits exist but none are scheduled", async () => {
+    finalOrder.mockResolvedValue({
+      data: [
+        {
+          id: "habit-tuesday",
+          name: "Tuesday habit",
+          icon: "📚",
+          color: "plum",
+          display_order: 0,
+          start_date: "2026-08-01",
+          habit_schedules: [{ weekday: 2 }],
+          completions: [],
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      getTodayViewModel("user-123", "UTC", "2026-08-10T12:00:00.000Z"),
+    ).resolves.toEqual({
+      completedCount: 0,
+      habits: [],
+      localDate: "2026-08-10",
+      status: "empty",
+      timeZone: "UTC",
+      totalCount: 0,
+    });
+  });
+
   it("keeps query failures distinct from an empty result", async () => {
     finalOrder.mockResolvedValue({
       data: null,

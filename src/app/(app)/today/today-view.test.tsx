@@ -5,6 +5,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import TodayError from "./error";
@@ -383,5 +385,83 @@ describe("Today view", () => {
         localDate: "2026-08-10",
       });
     });
+  });
+
+  it("supports keyboard activation with understandable pressed-state changes", async () => {
+    const user = userEvent.setup();
+    let resolveMutation:
+      | ((value: Awaited<ReturnType<typeof setHabitCompletion>>) => void)
+      | undefined;
+    vi.mocked(setHabitCompletion).mockReturnValue(
+      new Promise((resolve) => {
+        resolveMutation = resolve;
+      }),
+    );
+    render(<TodayView today={readyToday} />);
+
+    await user.tab();
+    const habit = screen.getByRole("button", {
+      name: "Morning walk, not complete",
+    });
+    expect(habit).toHaveFocus();
+
+    await user.keyboard(" ");
+
+    expect(setHabitCompletion).toHaveBeenCalledWith(
+      readyToday.habits[0].id,
+      true,
+    );
+    expect(
+      screen.getByRole("button", { name: "Morning walk, complete" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("1 of 1 habits complete")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveMutation?.({
+        status: "success",
+        habitId: readyToday.habits[0].id,
+        completed: true,
+        completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
+        localDate: "2026-08-10",
+      });
+    });
+  });
+
+  it("recovers from a thrown write failure and keeps the error dismissible", async () => {
+    const user = userEvent.setup();
+    vi.mocked(setHabitCompletion).mockRejectedValue(
+      new Error("network unavailable"),
+    );
+    render(<TodayView today={readyToday} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Morning walk, not complete" }),
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("previous check-in is restored");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Morning walk, not complete" }),
+      ).toHaveAttribute("aria-pressed", "false"),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Dismiss error message" }),
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("has no detectable structural accessibility violations", async () => {
+    const { container } = render(<TodayView today={readyToday} />);
+
+    const results = await axe.run(container, {
+      rules: {
+        // JSDOM does not calculate the rendered colors needed by this rule.
+        "color-contrast": { enabled: false },
+      },
+    });
+
+    expect(results.violations.map(({ id }) => id)).toEqual([]);
   });
 });
