@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(21);
 
 select has_function('public', 'move_habit', array['uuid', 'text']);
 select has_function('public', 'archive_habit', array['uuid']);
@@ -44,6 +44,28 @@ select throws_ok(
   $$select public.move_habit('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'sideways')$$,
   '22023',
   'Direction must be up or down'
+);
+
+update public.habits
+set display_order = 1
+where id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+);
+
+select lives_ok(
+  $$select public.move_habit('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'up')$$,
+  'a move remains deterministic when existing positions collide'
+);
+select results_eq(
+  $$select name from public.habits where archived_at is null order by display_order$$,
+  $$values ('Second'::text), ('Third'::text), ('First'::text)$$,
+  'the requested habit moves relative to the stable id tie-breaker'
+);
+select results_eq(
+  $$select display_order from public.habits where archived_at is null order by display_order$$,
+  $$values (0), (1), (2)$$,
+  'moving repairs colliding positions into a dense sequence'
 );
 
 insert into public.habit_schedules (habit_id, owner_id, weekday)
@@ -98,6 +120,13 @@ select throws_ok(
   'P0002',
   'Archived habit not found',
   'a user cannot restore another owner''s habit'
+);
+
+select throws_ok(
+  $$select public.move_habit('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'down')$$,
+  'P0002',
+  'Active habit not found',
+  'a user cannot move another owner''s habit'
 );
 
 select * from finish();

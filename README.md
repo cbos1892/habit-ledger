@@ -152,6 +152,8 @@ pnpm build
 Use `pnpm test:watch` while developing tests and `pnpm format` to apply formatting.
 See [docs/security-testing.md](./docs/security-testing.md) for the RLS checklist
 and the two-account deployed authentication smoke test.
+See [docs/r1-testing.md](./docs/r1-testing.md) for the authenticated Today and
+Setup functional browser suite.
 See [docs/navigation-performance.md](./docs/navigation-performance.md) for the
 authenticated Today/Week/Stats/Setup latency baseline and advisory post-deploy
 regression workflow.
