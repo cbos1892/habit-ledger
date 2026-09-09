@@ -127,6 +127,41 @@ describe("Week view", () => {
     });
   });
 
+  it("separates routine rows with a full-width accessible group header", () => {
+    render(
+      <WeekView
+        week={{
+          ...week,
+          sections: [
+            week.sections[0],
+            {
+              kind: "routine",
+              routine: {
+                id: "morning",
+                name: "Morning ritual",
+                displayOrder: 0,
+              },
+              rows: [{ ...weekRow, id: "routine-habit", name: "Make coffee" }],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const header = screen.getByText("Morning ritual").closest("th");
+    if (!header) throw new Error("Routine header was not rendered");
+    expect(header).toHaveAttribute("colspan", "8");
+    expect(header).toHaveAttribute("scope", "rowgroup");
+    expect(
+      screen
+        .getByRole("rowheader", { name: /Morning walk/ })
+        .compareDocumentPosition(header),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      screen.getByRole("rowheader", { name: /Make coffee/ }),
+    ).toBeInTheDocument();
+  });
+
   it("uses grid navigation as the sole source for pinned header scrolling", () => {
     const { container } = render(<WeekView week={week} />);
 

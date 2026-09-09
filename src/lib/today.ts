@@ -7,12 +7,13 @@ import {
   type RoutineRecord,
   type TodayHabit,
   type TodayRoutineViewModel,
+  type TodaySection,
 } from "@/lib/routine-view-models";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toLocalDateKey } from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
-export type { TodayHabit };
+export type { TodayHabit, TodaySection };
 export type TodayViewModel = TodayRoutineViewModel;
 
 const todayHabitSelection =

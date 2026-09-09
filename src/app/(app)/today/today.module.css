@@ -315,6 +315,82 @@
   list-style: none;
 }
 
+.sections {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.routineCard {
+  overflow: clip;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(
+    in srgb,
+    var(--color-accent-soft) 34%,
+    var(--color-surface)
+  );
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-normal) var(--ease-standard);
+}
+
+.routineCard[data-complete="true"] {
+  opacity: 0.78;
+}
+
+.routineToggle {
+  display: flex;
+  width: 100%;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border: 0;
+  background: transparent;
+  padding: var(--space-4);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.routineToggle:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+.routineName {
+  display: block;
+  font-size: var(--text-lg);
+  font-weight: 760;
+}
+.routineProgress {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 750;
+}
+.chevron {
+  color: var(--color-accent-hover);
+  font-size: var(--text-xl);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.routineToggle[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+.routineHabitList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3);
+  list-style: none;
+}
+.routineHabitList .habitCard {
+  min-height: 4.75rem;
+  border-left-width: 0.25rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
 .habitCard {
   --habit-color: var(--habit-fern);
   display: flex;
@@ -534,6 +610,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .habitCard,
+  .routineCard,
+  .chevron,
   .progress,
   .progressFill,
   .progressMilestone {

@@ -172,6 +172,51 @@ describe("Today view", () => {
     );
   });
 
+  it("keeps routines independently expandable and nested below standalone habits", async () => {
+    const user = userEvent.setup();
+    render(
+      <TodayView
+        today={{
+          ...readyToday,
+          totalCount: 2,
+          progress: { completedCount: 0, totalCount: 2 },
+          sections: [
+            readyToday.sections[0],
+            {
+              kind: "routine",
+              routine: {
+                id: "morning",
+                name: "Morning ritual",
+                displayOrder: 0,
+              },
+              progress: { completedCount: 0, totalCount: 1 },
+              habits: [
+                { ...readyHabit, id: "routine-habit", name: "Make coffee" },
+              ],
+            },
+          ],
+        }}
+      />,
+    );
+
+    const toggle = screen.getByRole("button", { name: /Morning ritual/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("button", { name: "Make coffee, not complete" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: "Make coffee, not complete" }),
+    ).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("button", { name: "Morning walk, not complete" })
+        .compareDocumentPosition(toggle),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it("only enables the card fade after the sticky marker leaves view", () => {
     let notifyIntersection: IntersectionObserverCallback | undefined;
     const observe = vi.fn();
