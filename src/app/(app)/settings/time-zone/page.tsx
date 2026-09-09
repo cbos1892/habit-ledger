@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Card } from "@/components/ui";
+import { ThemePreference } from "@/components/theme/theme-preference";
 import { getCurrentProfile } from "@/lib/profile";
 
 import { TimeZoneForm } from "../../setup/time-zone-form";
@@ -28,6 +29,16 @@ export default async function TimeZoneSettingsPage() {
           automatic detection does not match your intended local day.
         </p>
       </div>
+
+      <Card className={styles.card}>
+        <div className={styles.cardHeading}>
+          <h2>Appearance</h2>
+          <p>
+            Choose a lasting appearance, or let Habit Ledger follow your device.
+          </p>
+        </div>
+        <ThemePreference />
+      </Card>
 
       <Card className={styles.card}>
         <div className={styles.cardHeading}>
