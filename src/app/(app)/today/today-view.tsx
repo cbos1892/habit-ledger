@@ -8,7 +8,11 @@ import {
   useTransition,
 } from "react";
 
-import type { TodayHabit, TodayViewModel } from "../../../lib/today";
+import type {
+  TodayHabit,
+  TodaySection,
+  TodayViewModel,
+} from "../../../lib/today";
 import { setHabitCompletion } from "./completion-actions";
 import styles from "./today.module.css";
 
@@ -64,6 +68,39 @@ function updateOptimisticCompletion(
 
 function getTodayHabits(today: TodayViewModel): readonly TodayHabit[] {
   return today.sections.flatMap(({ habits }) => habits);
+}
+
+function getDisplaySections(
+  today: TodayViewModel,
+  heldRoutineId: string | null,
+): readonly TodaySection[] {
+  if (today.status === "empty") return [];
+
+  const standalone = today.sections.filter(
+    (section) => section.kind === "standalone",
+  );
+  const routines = today.sections
+    .filter((section) => section.kind === "routine")
+    .map((section, index) => ({
+      complete: section.progress.completedCount === section.progress.totalCount,
+      index,
+      section,
+    }))
+    .sort((left, right) => {
+      // Keep the final completed routine in place for a moment so its feedback
+      // is visible before it moves below unfinished routines.
+      const leftComplete =
+        left.complete && left.section.routine.id !== heldRoutineId;
+      const rightComplete =
+        right.complete && right.section.routine.id !== heldRoutineId;
+
+      return (
+        Number(leftComplete) - Number(rightComplete) || left.index - right.index
+      );
+    })
+    .map(({ section }) => section);
+
+  return [...standalone, ...routines];
 }
 
 function formatLocalDate(localDate: string) {
@@ -148,10 +185,15 @@ export function TodayView({ today }: TodayViewProps) {
     null,
   );
   const [showScrollFade, setShowScrollFade] = useState(false);
+  const [expandedRoutineIds, setExpandedRoutineIds] = useState<
+    ReadonlySet<string>
+  >(new Set());
+  const [heldRoutineId, setHeldRoutineId] = useState<string | null>(null);
   const latestMutationByHabit = useRef(new Map<string, number>());
   const mutationSequence = useRef(0);
   const stickySentinelRef = useRef<HTMLDivElement>(null);
   const habits = getTodayHabits(optimisticToday);
+  const displaySections = getDisplaySections(optimisticToday, heldRoutineId);
   const dateLabel = formatLocalDate(optimisticToday.localDate);
   const completionNotice = notice ? (
     <div className={styles.notice} role="alert">
@@ -184,6 +226,21 @@ export function TodayView({ today }: TodayViewProps) {
   }, [celebrationMutation]);
 
   useEffect(() => {
+    if (!heldRoutineId) return;
+
+    const timeout = window.setTimeout(() => {
+      setExpandedRoutineIds((current) => {
+        const next = new Set(current);
+        next.delete(heldRoutineId);
+        return next;
+      });
+      setHeldRoutineId(null);
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [heldRoutineId]);
+
+  useEffect(() => {
     const sentinel = stickySentinelRef.current;
 
     if (!sentinel || typeof IntersectionObserver === "undefined") return;
@@ -211,6 +268,19 @@ export function TodayView({ today }: TodayViewProps) {
     latestMutationByHabit.current.set(habitId, mutationId);
     setNotice(null);
     setCelebrationMutation(completesToday ? mutationId : null);
+
+    const routine = optimisticToday.sections.find(
+      (section) =>
+        section.kind === "routine" &&
+        section.habits.some(({ id }) => id === habitId),
+    );
+    if (routine?.kind === "routine") {
+      const completingRoutine =
+        nextCompleted &&
+        routine.progress.completedCount + 1 === routine.progress.totalCount;
+      if (completingRoutine) setHeldRoutineId(routine.routine.id);
+      if (!nextCompleted) setHeldRoutineId(null);
+    }
 
     startTransition(async () => {
       setOptimisticCompletion({ habitId, completed: nextCompleted });
@@ -302,35 +372,125 @@ export function TodayView({ today }: TodayViewProps) {
             </div>
             {completionNotice}
           </div>
-          <ul className={styles.habitList}>
-            {habits.map((habit) => (
-              <li key={habit.id}>
-                <button
-                  className={styles.habitCard}
-                  data-color={habit.color}
-                  type="button"
-                  aria-pressed={habit.completed}
-                  aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
-                  onClick={() => mutateCompletion(habit.id)}
-                >
-                  <span className={styles.habitIdentity}>
-                    <span className={styles.habitIcon} aria-hidden="true">
-                      {habit.icon}
-                    </span>
-                    <span className={styles.habitName}>{habit.name}</span>
-                  </span>
-                  <span className={styles.completion} aria-hidden="true">
-                    <span className={styles.checkmark}>
-                      {habit.completed ? "✓" : ""}
-                    </span>
-                    <span>{habit.completed ? "Complete" : "Check in"}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className={styles.sections}>
+            {displaySections.map((section) =>
+              section.kind === "standalone" ? (
+                <ul className={styles.habitList} key="standalone">
+                  {section.habits.map((habit) => (
+                    <HabitCard
+                      habit={habit}
+                      key={habit.id}
+                      mutateCompletion={mutateCompletion}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <RoutineCard
+                  expanded={expandedRoutineIds.has(section.routine.id)}
+                  key={section.routine.id}
+                  mutateCompletion={mutateCompletion}
+                  onToggle={() =>
+                    setExpandedRoutineIds((current) => {
+                      const next = new Set(current);
+                      if (next.has(section.routine.id))
+                        next.delete(section.routine.id);
+                      else next.add(section.routine.id);
+                      return next;
+                    })
+                  }
+                  section={section}
+                />
+              ),
+            )}
+          </div>
         </section>
       )}
     </div>
+  );
+}
+
+function HabitCard({
+  habit,
+  mutateCompletion,
+}: {
+  habit: TodayHabit;
+  mutateCompletion: (habitId: string) => void;
+}) {
+  return (
+    <li>
+      <button
+        className={styles.habitCard}
+        data-color={habit.color}
+        type="button"
+        aria-pressed={habit.completed}
+        aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
+        onClick={() => mutateCompletion(habit.id)}
+      >
+        <span className={styles.habitIdentity}>
+          <span className={styles.habitIcon} aria-hidden="true">
+            {habit.icon}
+          </span>
+          <span className={styles.habitName}>{habit.name}</span>
+        </span>
+        <span className={styles.completion} aria-hidden="true">
+          <span className={styles.checkmark}>{habit.completed ? "✓" : ""}</span>
+          <span>{habit.completed ? "Complete" : "Check in"}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function RoutineCard({
+  expanded,
+  mutateCompletion,
+  onToggle,
+  section,
+}: {
+  expanded: boolean;
+  mutateCompletion: (habitId: string) => void;
+  onToggle: () => void;
+  section: Extract<TodaySection, { kind: "routine" }>;
+}) {
+  const { completedCount, totalCount } = section.progress;
+  const contentId = `routine-${section.routine.id}`;
+  return (
+    <section
+      className={styles.routineCard}
+      data-complete={completedCount === totalCount}
+      data-expanded={expanded}
+      aria-labelledby={`${contentId}-title`}
+    >
+      <button
+        className={styles.routineToggle}
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        onClick={onToggle}
+      >
+        <span>
+          <span className={styles.routineName} id={`${contentId}-title`}>
+            {section.routine.name}
+          </span>
+          <span className={styles.routineProgress}>
+            {completedCount} of {totalCount}
+          </span>
+        </span>
+        <span className={styles.chevron} aria-hidden="true">
+          ⌄
+        </span>
+      </button>
+      {expanded ? (
+        <ul className={styles.routineHabitList} id={contentId}>
+          {section.habits.map((habit) => (
+            <HabitCard
+              habit={habit}
+              key={habit.id}
+              mutateCompletion={mutateCompletion}
+            />
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }

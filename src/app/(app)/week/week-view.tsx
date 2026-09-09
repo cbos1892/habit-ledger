@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import type {
+  WeeklySection,
   WeeklyHabitCell,
   WeeklyHabitRow,
   WeeklyViewModel,
@@ -325,6 +326,20 @@ function HabitRow({
   );
 }
 
+function RoutineHeader({
+  section,
+}: {
+  section: Extract<WeeklySection, { kind: "routine" }>;
+}) {
+  return (
+    <tr className={styles.routineHeaderRow}>
+      <th colSpan={8} scope="rowgroup">
+        {section.routine.name}
+      </th>
+    </tr>
+  );
+}
+
 export function WeekView({ week }: { week: WeeklyViewModel }) {
   const [optimisticWeek, setOptimisticCell] = useOptimistic(
     week,
@@ -623,22 +638,32 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
-                    <HabitRow
-                      currentLocalDate={optimisticWeek.currentLocalDate}
-                      key={row.id}
-                      mutateCompletion={mutateCompletion}
-                      pendingCells={pendingCells}
-                      row={row}
-                      celebratingDayDates={
-                        celebration?.dayDates ?? new Set<string>()
-                      }
-                      celebratingRowIds={
-                        celebration?.rowIds ?? new Set<string>()
-                      }
-                      perfectDayDates={perfectDayDates}
-                    />
-                  ))}
+                  {optimisticWeek.sections.flatMap((section) => [
+                    ...(section.kind === "routine"
+                      ? [
+                          <RoutineHeader
+                            key={`routine-${section.routine.id}`}
+                            section={section}
+                          />,
+                        ]
+                      : []),
+                    ...section.rows.map((row) => (
+                      <HabitRow
+                        currentLocalDate={optimisticWeek.currentLocalDate}
+                        key={row.id}
+                        mutateCompletion={mutateCompletion}
+                        pendingCells={pendingCells}
+                        row={row}
+                        celebratingDayDates={
+                          celebration?.dayDates ?? new Set<string>()
+                        }
+                        celebratingRowIds={
+                          celebration?.rowIds ?? new Set<string>()
+                        }
+                        perfectDayDates={perfectDayDates}
+                      />
+                    )),
+                  ])}
                 </tbody>
               </table>
             </div>

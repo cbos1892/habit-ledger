@@ -9,6 +9,7 @@ import {
   type WeeklyHabitCellState,
   type WeeklyHabitRow,
   type WeeklyRoutineViewModel,
+  type WeeklySection,
 } from "@/lib/routine-view-models";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -19,7 +20,12 @@ import {
 } from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
-export type { WeeklyHabitCell, WeeklyHabitCellState, WeeklyHabitRow };
+export type {
+  WeeklyHabitCell,
+  WeeklyHabitCellState,
+  WeeklyHabitRow,
+  WeeklySection,
+};
 
 export type WeeklyViewModel = Readonly<
   WeeklyRoutineViewModel & {
