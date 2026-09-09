@@ -1,10 +1,15 @@
 import "server-only";
 
+import { isIsoWeekday } from "@/lib/habit-schedule";
 import {
-  isHabitScheduledOnDate,
-  isIsoWeekday,
-  type IsoWeekday,
-} from "@/lib/habit-schedule";
+  buildWeeklyRoutineViewModel,
+  type RoutineHabitRecord,
+  type RoutineRecord,
+  type WeeklyHabitCell,
+  type WeeklyHabitCellState,
+  type WeeklyHabitRow,
+  type WeeklyRoutineViewModel,
+} from "@/lib/routine-view-models";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   getLocalWeekDateKeysFromDate,
@@ -14,46 +19,15 @@ import {
 } from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
-type WeeklyHabitIdentity = Pick<
-  Tables<"habits">,
-  "id" | "name" | "icon" | "color"
->;
+export type { WeeklyHabitCell, WeeklyHabitCellState, WeeklyHabitRow };
 
-export type WeeklyHabitCellState = "completed" | "incomplete" | "not-scheduled";
-
-export type WeeklyHabitCell = Readonly<{
-  completionId: string | null;
-  localDate: string;
-  state: WeeklyHabitCellState;
-}>;
-
-export type WeeklyHabitRow = Readonly<
-  WeeklyHabitIdentity & {
-    cells: readonly WeeklyHabitCell[];
-    displayOrder: number;
+export type WeeklyViewModel = Readonly<
+  WeeklyRoutineViewModel & {
+    currentLocalDate: string;
+    endDate: string;
+    startDate: string;
   }
 >;
-
-type WeeklyViewModelBase = Readonly<{
-  currentLocalDate: string;
-  endDate: string;
-  localDates: readonly string[];
-  startDate: string;
-  timeZone: string;
-  weekStartsOn: WeekStartsOn;
-}>;
-
-export type WeeklyViewModel =
-  | (WeeklyViewModelBase &
-      Readonly<{
-        rows: readonly [];
-        status: "empty";
-      }>)
-  | (WeeklyViewModelBase &
-      Readonly<{
-        rows: readonly WeeklyHabitRow[];
-        status: "ready";
-      }>);
 
 export type WeeklyViewOptions = Readonly<{
   instant?: Date | number | string;
@@ -62,77 +36,53 @@ export type WeeklyViewOptions = Readonly<{
 }>;
 
 const weeklyHabitSelection =
-  "id, name, icon, color, start_date, archived_at, display_order, habit_schedules(weekday), completions(id, local_date)" as const;
+  "id, name, icon, color, start_date, archived_at, display_order, routine_id, routine_display_order, routines(id, name, display_order), habit_schedules(weekday), completions(id, local_date)" as const;
 
 type WeeklyHabitRecord = Pick<
   Tables<"habits">,
+  | "archived_at"
+  | "color"
+  | "display_order"
+  | "icon"
   | "id"
   | "name"
-  | "icon"
-  | "color"
+  | "routine_display_order"
+  | "routine_id"
   | "start_date"
-  | "archived_at"
-  | "display_order"
 > & {
   completions: Pick<Tables<"completions">, "id" | "local_date">[];
   habit_schedules: { weekday: number }[];
+  routines: Pick<Tables<"routines">, "display_order" | "id" | "name"> | null;
 };
 
-type CompletionIdentity = Pick<Tables<"completions">, "id" | "local_date">;
+function normalizeHabit(habit: WeeklyHabitRecord): RoutineHabitRecord {
+  return {
+    archived_at: habit.archived_at,
+    color: habit.color,
+    completions: habit.completions,
+    display_order: habit.display_order,
+    icon: habit.icon,
+    id: habit.id,
+    name: habit.name,
+    routine_display_order: habit.routine_display_order ?? null,
+    routine_id: habit.routine_id ?? null,
+    start_date: habit.start_date,
+    weekdays: habit.habit_schedules
+      .map(({ weekday }) => weekday)
+      .filter(isIsoWeekday),
+  };
+}
 
-function indexCompletions(
+function getJoinedRoutines(
   habits: readonly WeeklyHabitRecord[],
-): ReadonlyMap<string, ReadonlyMap<string, CompletionIdentity>> {
-  return new Map(
-    habits.map((habit) => [
-      habit.id,
-      new Map(
-        habit.completions.map((completion) => [
-          completion.local_date,
-          completion,
-        ]),
+): RoutineRecord[] {
+  return [
+    ...new Map(
+      habits.flatMap(({ routines }) =>
+        routines ? [[routines.id, routines] as const] : [],
       ),
-    ]),
-  );
-}
-
-function getScheduledWeekdays(habit: WeeklyHabitRecord): IsoWeekday[] {
-  return habit.habit_schedules
-    .map(({ weekday }) => weekday)
-    .filter(isIsoWeekday);
-}
-
-function createCell(
-  habit: WeeklyHabitRecord,
-  localDate: string,
-  weekdays: readonly IsoWeekday[],
-  archivedLocalDate: string | null,
-  completions: ReadonlyMap<string, CompletionIdentity>,
-): WeeklyHabitCell {
-  const completion = completions.get(localDate);
-
-  if (completion) {
-    return Object.freeze({
-      completionId: completion.id,
-      localDate,
-      state: "completed",
-    });
-  }
-
-  const activeOnDate =
-    archivedLocalDate === null || localDate <= archivedLocalDate;
-  const scheduled =
-    activeOnDate &&
-    isHabitScheduledOnDate(
-      { startDate: habit.start_date, weekdays },
-      localDate,
-    );
-
-  return Object.freeze({
-    completionId: null,
-    localDate,
-    state: scheduled ? "incomplete" : "not-scheduled",
-  });
+    ).values(),
+  ];
 }
 
 export async function getWeeklyViewModel(
@@ -177,53 +127,18 @@ export async function getWeeklyViewModel(
   if (error) throw new Error("Unable to load the weekly habits.");
 
   const habits = (data ?? []) as WeeklyHabitRecord[];
-  const completionsByHabitAndDate = indexCompletions(habits);
-  const rows = habits.flatMap((habit): WeeklyHabitRow[] => {
-    const archivedLocalDate = habit.archived_at
-      ? toLocalDateKey(habit.archived_at, timeZone)
-      : null;
-    const weekdays = getScheduledWeekdays(habit);
-    const completions = completionsByHabitAndDate.get(habit.id) ?? new Map();
-    const cells = Object.freeze(
-      localDates.map((localDate) =>
-        createCell(habit, localDate, weekdays, archivedLocalDate, completions),
-      ),
-    );
-
-    if (cells.every(({ state }) => state === "not-scheduled")) return [];
-
-    return [
-      Object.freeze({
-        id: habit.id,
-        name: habit.name,
-        icon: habit.icon,
-        color: habit.color,
-        cells,
-        displayOrder: habit.display_order,
-      }),
-    ];
-  });
-
-  const shared = {
-    currentLocalDate,
-    endDate,
+  const grouped = buildWeeklyRoutineViewModel(
+    getJoinedRoutines(habits),
+    habits.map(normalizeHabit),
     localDates,
-    startDate,
     timeZone,
     weekStartsOn,
-  };
-
-  if (rows.length === 0) {
-    return Object.freeze({
-      ...shared,
-      rows: Object.freeze([] as const),
-      status: "empty",
-    });
-  }
+  );
 
   return Object.freeze({
-    ...shared,
-    rows: Object.freeze(rows),
-    status: "ready",
+    ...grouped,
+    currentLocalDate,
+    endDate,
+    startDate,
   });
 }

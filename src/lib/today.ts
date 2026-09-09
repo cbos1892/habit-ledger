@@ -1,44 +1,69 @@
 import "server-only";
 
-import { isHabitScheduledAt, isIsoWeekday } from "@/lib/habit-schedule";
+import { isIsoWeekday } from "@/lib/habit-schedule";
+import {
+  buildTodayRoutineViewModel,
+  type RoutineHabitRecord,
+  type RoutineRecord,
+  type TodayHabit,
+  type TodayRoutineViewModel,
+} from "@/lib/routine-view-models";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { toLocalDateKey } from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
-type TodayHabitIdentity = Pick<
-  Tables<"habits">,
-  "id" | "name" | "icon" | "color"
->;
-
-export type TodayHabit = Readonly<
-  TodayHabitIdentity & {
-    completed: boolean;
-    completionId: string | null;
-    displayOrder: number;
-  }
->;
-
-type TodayViewModelBase = Readonly<{
-  completedCount: number;
-  localDate: string;
-  timeZone: string;
-  totalCount: number;
-}>;
-
-export type TodayViewModel =
-  | (TodayViewModelBase &
-      Readonly<{
-        habits: readonly [];
-        status: "empty";
-      }>)
-  | (TodayViewModelBase &
-      Readonly<{
-        habits: readonly TodayHabit[];
-        status: "ready";
-      }>);
+export type { TodayHabit };
+export type TodayViewModel = TodayRoutineViewModel;
 
 const todayHabitSelection =
-  "id, name, icon, color, start_date, display_order, habit_schedules(weekday), completions(id, local_date)" as const;
+  "id, name, icon, color, start_date, archived_at, display_order, routine_id, routine_display_order, routines(id, name, display_order), habit_schedules(weekday), completions(id, local_date)" as const;
+
+type TodayHabitRecord = Pick<
+  Tables<"habits">,
+  | "archived_at"
+  | "color"
+  | "display_order"
+  | "icon"
+  | "id"
+  | "name"
+  | "routine_display_order"
+  | "routine_id"
+  | "start_date"
+> & {
+  completions: Pick<Tables<"completions">, "id" | "local_date">[];
+  habit_schedules: { weekday: number }[];
+  routines: Pick<Tables<"routines">, "display_order" | "id" | "name"> | null;
+};
+
+function normalizeHabit(habit: TodayHabitRecord): RoutineHabitRecord {
+  return {
+    archived_at: habit.archived_at ?? null,
+    color: habit.color,
+    completions: habit.completions,
+    display_order: habit.display_order,
+    icon: habit.icon,
+    id: habit.id,
+    name: habit.name,
+    routine_display_order: habit.routine_display_order ?? null,
+    routine_id: habit.routine_id ?? null,
+    start_date: habit.start_date,
+    weekdays: habit.habit_schedules
+      .map(({ weekday }) => weekday)
+      .filter(isIsoWeekday),
+  };
+}
+
+function getJoinedRoutines(
+  habits: readonly TodayHabitRecord[],
+): RoutineRecord[] {
+  return [
+    ...new Map(
+      habits.flatMap(({ routines }) =>
+        routines ? [[routines.id, routines] as const] : [],
+      ),
+    ).values(),
+  ];
+}
 
 export async function getTodayViewModel(
   ownerId: string,
@@ -58,52 +83,12 @@ export async function getTodayViewModel(
 
   if (error) throw new Error("Unable to load today's habits.");
 
-  const habits = (data ?? [])
-    .filter((habit) =>
-      isHabitScheduledAt(
-        {
-          startDate: habit.start_date,
-          weekdays: habit.habit_schedules
-            .map(({ weekday }) => weekday)
-            .filter(isIsoWeekday),
-        },
-        instant,
-        timeZone,
-      ),
-    )
-    .map((habit): TodayHabit => {
-      const completion = habit.completions[0] ?? null;
+  const habits = (data ?? []) as TodayHabitRecord[];
 
-      return Object.freeze({
-        id: habit.id,
-        name: habit.name,
-        icon: habit.icon,
-        color: habit.color,
-        completed: completion !== null,
-        completionId: completion?.id ?? null,
-        displayOrder: habit.display_order,
-      });
-    });
-
-  const completedCount = habits.filter(({ completed }) => completed).length;
-  const shared = {
-    completedCount,
-    localDate,
+  return buildTodayRoutineViewModel(
+    getJoinedRoutines(habits),
+    habits.map(normalizeHabit),
     timeZone,
-    totalCount: habits.length,
-  };
-
-  if (habits.length === 0) {
-    return Object.freeze({
-      ...shared,
-      habits: Object.freeze([] as const),
-      status: "empty",
-    });
-  }
-
-  return Object.freeze({
-    ...shared,
-    habits: Object.freeze(habits),
-    status: "ready",
-  });
+    instant,
+  );
 }

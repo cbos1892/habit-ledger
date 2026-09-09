@@ -90,23 +90,30 @@ function updateOptimisticCell(
 
   return {
     ...week,
-    rows: week.rows.map((row) =>
-      row.id !== update.habitId
-        ? row
-        : {
-            ...row,
-            cells: row.cells.map((cell) =>
-              cell.localDate !== update.localDate
-                ? cell
-                : {
-                    ...cell,
-                    completionId: update.completed ? cell.completionId : null,
-                    state: update.completed ? "completed" : "incomplete",
-                  },
-            ),
-          },
-    ),
+    sections: week.sections.map((section) => ({
+      ...section,
+      rows: section.rows.map((row) =>
+        row.id !== update.habitId
+          ? row
+          : {
+              ...row,
+              cells: row.cells.map((cell) =>
+                cell.localDate !== update.localDate
+                  ? cell
+                  : {
+                      ...cell,
+                      completionId: update.completed ? cell.completionId : null,
+                      state: update.completed ? "completed" : "incomplete",
+                    },
+              ),
+            },
+      ),
+    })),
   };
+}
+
+function getWeeklyRows(week: WeeklyViewModel): readonly WeeklyHabitRow[] {
+  return week.sections.flatMap(({ rows }) => rows);
 }
 
 function getCellKey(habitId: string, localDate: string) {
@@ -338,10 +345,11 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
   const previousWeekStart = addLocalDateDays(optimisticWeek.startDate, -7);
   const nextWeekStart = addLocalDateDays(optimisticWeek.startDate, 7);
   const isCurrentWeek = optimisticWeek.startDate === currentWeekStart;
+  const rows = getWeeklyRows(optimisticWeek);
   const dayProgress = new Map(
     optimisticWeek.localDates.map((localDate) => [
       localDate,
-      getDayProgress(optimisticWeek.rows, localDate),
+      getDayProgress(rows, localDate),
     ]),
   );
   const perfectDayDates = new Set(
@@ -378,13 +386,14 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
     setNotice(null);
     setPendingCells((current) => new Set(current).add(cellKey));
 
-    const previousRow = optimisticWeek.rows.find(({ id }) => id === habitId);
+    const previousRow = rows.find(({ id }) => id === habitId);
     const nextWeek = updateOptimisticCell(optimisticWeek, {
       completed,
       habitId,
       localDate,
     });
-    const nextRow = nextWeek.rows.find(({ id }) => id === habitId);
+    const nextRows = getWeeklyRows(nextWeek);
+    const nextRow = nextRows.find(({ id }) => id === habitId);
     const completedRow =
       completed &&
       previousRow !== undefined &&
@@ -393,8 +402,8 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
       isComplete(getRowProgress(nextRow));
     const completedDay =
       completed &&
-      !isComplete(getDayProgress(optimisticWeek.rows, localDate)) &&
-      isComplete(getDayProgress(nextWeek.rows, localDate));
+      !isComplete(getDayProgress(rows, localDate)) &&
+      isComplete(getDayProgress(nextRows, localDate));
 
     if (completedRow || completedDay) {
       const messages = [];
@@ -494,8 +503,7 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
         </div>
         {optimisticWeek.status === "ready" ? (
           <p className={styles.summary}>
-            {optimisticWeek.rows.length}{" "}
-            {optimisticWeek.rows.length === 1 ? "habit" : "habits"}
+            {rows.length} {rows.length === 1 ? "habit" : "habits"}
           </p>
         ) : null}
       </header>
@@ -615,7 +623,7 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {optimisticWeek.rows.map((row) => (
+                  {rows.map((row) => (
                     <HabitRow
                       currentLocalDate={optimisticWeek.currentLocalDate}
                       key={row.id}

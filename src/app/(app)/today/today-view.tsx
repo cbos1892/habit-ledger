@@ -8,7 +8,7 @@ import {
   useTransition,
 } from "react";
 
-import type { TodayViewModel } from "../../../lib/today";
+import type { TodayHabit, TodayViewModel } from "../../../lib/today";
 import { setHabitCompletion } from "./completion-actions";
 import styles from "./today.module.css";
 
@@ -31,21 +31,39 @@ function updateOptimisticCompletion(
 ): TodayViewModel {
   if (today.status === "empty") return today;
 
-  const habits = today.habits.map((habit) =>
-    habit.id === update.habitId
-      ? {
-          ...habit,
-          completed: update.completed,
-          completionId: update.completed ? habit.completionId : null,
-        }
-      : habit,
-  );
+  const sections = today.sections.map((section) => {
+    const habits = section.habits.map((habit) =>
+      habit.id === update.habitId
+        ? {
+            ...habit,
+            completed: update.completed,
+            completionId: update.completed ? habit.completionId : null,
+          }
+        : habit,
+    );
+
+    return {
+      ...section,
+      habits,
+      progress: {
+        completedCount: habits.filter(({ completed }) => completed).length,
+        totalCount: habits.length,
+      },
+    };
+  });
+  const habits = sections.flatMap(({ habits: sectionHabits }) => sectionHabits);
+  const completedCount = habits.filter(({ completed }) => completed).length;
 
   return {
     ...today,
-    completedCount: habits.filter(({ completed }) => completed).length,
-    habits,
+    completedCount,
+    progress: { completedCount, totalCount: habits.length },
+    sections,
   };
+}
+
+function getTodayHabits(today: TodayViewModel): readonly TodayHabit[] {
+  return today.sections.flatMap(({ habits }) => habits);
 }
 
 function formatLocalDate(localDate: string) {
@@ -133,6 +151,7 @@ export function TodayView({ today }: TodayViewProps) {
   const latestMutationByHabit = useRef(new Map<string, number>());
   const mutationSequence = useRef(0);
   const stickySentinelRef = useRef<HTMLDivElement>(null);
+  const habits = getTodayHabits(optimisticToday);
   const dateLabel = formatLocalDate(optimisticToday.localDate);
   const completionNotice = notice ? (
     <div className={styles.notice} role="alert">
@@ -179,7 +198,7 @@ export function TodayView({ today }: TodayViewProps) {
   }, []);
 
   function mutateCompletion(habitId: string) {
-    const habit = optimisticToday.habits.find(({ id }) => id === habitId);
+    const habit = habits.find(({ id }) => id === habitId);
 
     if (!habit) return;
 
@@ -284,7 +303,7 @@ export function TodayView({ today }: TodayViewProps) {
             {completionNotice}
           </div>
           <ul className={styles.habitList}>
-            {optimisticToday.habits.map((habit) => (
+            {habits.map((habit) => (
               <li key={habit.id}>
                 <button
                   className={styles.habitCard}

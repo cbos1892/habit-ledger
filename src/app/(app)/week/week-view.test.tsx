@@ -31,22 +31,56 @@ const week: WeeklyViewModel = {
     "2026-08-15",
     "2026-08-16",
   ],
-  rows: [
+  sections: [
     {
-      cells: [
-        { completionId: "done-1", localDate: "2026-08-10", state: "completed" },
-        { completionId: null, localDate: "2026-08-11", state: "incomplete" },
-        { completionId: null, localDate: "2026-08-12", state: "incomplete" },
-        { completionId: null, localDate: "2026-08-13", state: "incomplete" },
-        { completionId: null, localDate: "2026-08-14", state: "not-scheduled" },
-        { completionId: null, localDate: "2026-08-15", state: "not-scheduled" },
-        { completionId: null, localDate: "2026-08-16", state: "not-scheduled" },
+      kind: "standalone",
+      rows: [
+        {
+          cells: [
+            {
+              completionId: "done-1",
+              localDate: "2026-08-10",
+              state: "completed",
+            },
+            {
+              completionId: null,
+              localDate: "2026-08-11",
+              state: "incomplete",
+            },
+            {
+              completionId: null,
+              localDate: "2026-08-12",
+              state: "incomplete",
+            },
+            {
+              completionId: null,
+              localDate: "2026-08-13",
+              state: "incomplete",
+            },
+            {
+              completionId: null,
+              localDate: "2026-08-14",
+              state: "not-scheduled",
+            },
+            {
+              completionId: null,
+              localDate: "2026-08-15",
+              state: "not-scheduled",
+            },
+            {
+              completionId: null,
+              localDate: "2026-08-16",
+              state: "not-scheduled",
+            },
+          ],
+          color: "fern",
+          displayOrder: 0,
+          icon: "🚶",
+          id: "habit-a",
+          name: "Morning walk",
+          routineDisplayOrder: null,
+        },
       ],
-      color: "fern",
-      displayOrder: 0,
-      icon: "🚶",
-      id: "habit-a",
-      name: "Morning walk",
     },
   ],
   startDate: "2026-08-10",
@@ -54,6 +88,7 @@ const week: WeeklyViewModel = {
   timeZone: "America/New_York",
   weekStartsOn: 1,
 };
+const weekRow = week.sections[0].rows[0];
 
 describe("Week view", () => {
   beforeEach(() => {
@@ -183,7 +218,7 @@ describe("Week view", () => {
             "2026-08-08",
             "2026-08-09",
           ],
-          rows: [],
+          sections: [],
           startDate: "2026-08-03",
           status: "empty",
         }}
@@ -255,7 +290,7 @@ describe("Week view", () => {
             currentLocalDate: "2026-10-15",
             endDate,
             localDates,
-            rows: [],
+            sections: [],
             startDate,
             status: "empty",
           }}
@@ -297,7 +332,7 @@ describe("Week view", () => {
   });
 
   it("renders an encouraging empty week", () => {
-    render(<WeekView week={{ ...week, rows: [], status: "empty" }} />);
+    render(<WeekView week={{ ...week, sections: [], status: "empty" }} />);
 
     expect(
       screen.getByRole("heading", {
@@ -403,14 +438,19 @@ describe("Week view", () => {
     const completedWeek: WeeklyViewModel = {
       ...week,
       currentLocalDate: "2026-08-16",
-      rows: [
+      sections: [
         {
-          ...week.rows[0],
-          cells: week.localDates.map((localDate, index) => ({
-            completionId: index === 0 ? "done-1" : null,
-            localDate,
-            state: index === 0 ? "completed" : "not-scheduled",
-          })),
+          ...week.sections[0],
+          rows: [
+            {
+              ...weekRow,
+              cells: week.localDates.map((localDate, index) => ({
+                completionId: index === 0 ? "done-1" : null,
+                localDate,
+                state: index === 0 ? "completed" : "not-scheduled",
+              })),
+            },
+          ],
         },
       ],
     };
@@ -452,19 +492,24 @@ describe("Week view", () => {
     const milestoneWeek: WeeklyViewModel = {
       ...week,
       currentLocalDate: "2026-08-16",
-      rows: [
+      sections: [
         {
-          ...week.rows[0],
-          cells: week.localDates.map((localDate, index) => ({
-            completionId: index === 0 ? "done-1" : null,
-            localDate,
-            state:
-              index === 0
-                ? "completed"
-                : index === 1
-                  ? "incomplete"
-                  : "not-scheduled",
-          })),
+          ...week.sections[0],
+          rows: [
+            {
+              ...weekRow,
+              cells: week.localDates.map((localDate, index) => ({
+                completionId: index === 0 ? "done-1" : null,
+                localDate,
+                state:
+                  index === 0
+                    ? "completed"
+                    : index === 1
+                      ? "incomplete"
+                      : "not-scheduled",
+              })),
+            },
+          ],
         },
       ],
     };
