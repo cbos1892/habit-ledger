@@ -55,30 +55,27 @@ a {
   align-items: center;
   justify-content: space-between;
   min-height: 4.5rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.9rem 1.25rem;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  color: var(--ink);
   font-size: 1rem;
-  font-weight: 760;
-  letter-spacing: -0.025em;
+  font-weight: 720;
+  letter-spacing: -0.03em;
 }
 
 .brand-mark {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border-radius: var(--radius-md) var(--radius-md) var(--radius-md)
-    var(--space-1);
-  background: var(--accent);
-  color: var(--color-on-accent);
+  color: var(--accent-strong);
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.12em;
+  line-height: 1;
 }
 
 .privacy-pill {
@@ -149,7 +146,7 @@ a {
   z-index: 50;
   border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   background: var(--color-nav-surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 -0.6rem 1.6rem color-mix(in srgb, var(--ink) 6%, transparent);
   padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
   backdrop-filter: blur(18px);
 }
@@ -179,7 +176,9 @@ a {
   color: var(--ink-muted);
   flex-direction: column;
   font-size: 0.72rem;
-  font-weight: 680;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
   text-decoration: none;
   transition:
     background-color var(--duration-fast) var(--ease-standard),
@@ -359,7 +358,7 @@ a {
 @media (min-width: 48rem) {
   .app-shell {
     display: grid;
-    grid-template-columns: 15.5rem minmax(0, 1fr);
+    grid-template-columns: clamp(14.5rem, 18vw, 17rem) minmax(0, 1fr);
   }
 
   .mobile-header {
@@ -372,24 +371,45 @@ a {
     display: flex;
     height: 100vh;
     border-top: 0;
-    border-right: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+    border-right: 1px solid var(--line);
     background: var(--color-nav-surface-wide);
     box-shadow: none;
-    padding: 1.5rem 1rem;
-    backdrop-filter: blur(18px);
+    padding: 1.5rem 0.85rem;
+    backdrop-filter: none;
     flex-direction: column;
   }
 
   .desktop-brand {
     display: flex;
-    padding: 0.25rem 0.6rem 2rem;
+    margin: 0 0.35rem 1.25rem;
+    border-bottom: 1px solid var(--line);
+    padding: 0.5rem 0.3rem 1.3rem;
   }
 
   .desktop-footer {
     display: grid;
-    gap: var(--space-4);
+    gap: var(--space-3);
     margin-top: auto;
-    padding: 0 var(--space-3);
+    border-top: 1px solid var(--line);
+    padding: var(--space-5) var(--space-3) 0;
+  }
+
+  .settings-link {
+    width: fit-content;
+    color: var(--ink-muted);
+    font-size: var(--text-sm);
+    font-weight: 680;
+    text-underline-offset: 0.2em;
+  }
+
+  .settings-link:hover {
+    color: var(--ink);
+  }
+
+  .settings-link:focus-visible {
+    border-radius: var(--radius-sm);
+    outline: 3px solid var(--warm);
+    outline-offset: 3px;
   }
 
   .desktop-note {
@@ -414,7 +434,7 @@ a {
     min-height: 3.25rem;
     justify-content: flex-start;
     gap: 0.8rem;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     padding: 0.65rem 0.85rem;
     flex-direction: row;
     font-size: 0.9rem;
@@ -422,10 +442,11 @@ a {
 
   .primary-nav-link[aria-current="page"]::after {
     position: absolute;
-    right: 0.75rem;
-    width: 0.35rem;
-    height: 0.35rem;
-    border-radius: var(--radius-pill);
+    top: 0.7rem;
+    bottom: 0.7rem;
+    left: -0.45rem;
+    width: 0.16rem;
+    border-radius: var(--radius-sm);
     background: var(--accent);
     content: "";
   }
