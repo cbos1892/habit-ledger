@@ -16,10 +16,12 @@ describe("HabitForm", () => {
           name: "",
           icon: "",
           color: "fern",
+          routineId: "",
           startDate: "2026-08-10",
           weekdays: [1, 2, 3, 4, 5, 6, 7],
         }}
         mode="create"
+        routines={[]}
       />,
     );
 
@@ -45,10 +47,12 @@ describe("HabitForm", () => {
           name: "Read",
           icon: "📚",
           color: "plum",
+          routineId: "",
           startDate: "2026-07-01",
           weekdays: [1, 3, 5],
         }}
         mode="edit"
+        routines={[]}
       />,
     );
 
@@ -63,6 +67,31 @@ describe("HabitForm", () => {
     ).toBeInTheDocument();
   });
 
+  it("can keep a habit standalone or place it in a routine", () => {
+    const routineId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    render(
+      <HabitForm
+        action={action}
+        initialValues={{
+          name: "Read",
+          icon: "📚",
+          color: "plum",
+          routineId,
+          startDate: "2026-07-01",
+          weekdays: [1, 3, 5],
+        }}
+        mode="edit"
+        routines={[{ display_order: 0, id: routineId, name: "Morning reset" }]}
+      />,
+    );
+
+    expect(screen.getByRole("combobox", { name: /Routine/ })).toHaveValue(
+      routineId,
+    );
+    expect(screen.getByRole("option", { name: "Standalone" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "Morning reset" })).toBeVisible();
+  });
+
   it("supports selecting every day or a custom non-empty set", () => {
     render(
       <HabitForm
@@ -71,10 +100,12 @@ describe("HabitForm", () => {
           name: "Read",
           icon: "📚",
           color: "plum",
+          routineId: "",
           startDate: "2026-07-01",
           weekdays: [1, 3, 5],
         }}
         mode="edit"
+        routines={[]}
       />,
     );
 
@@ -97,10 +128,12 @@ describe("HabitForm", () => {
           name: "Read",
           icon: "📚",
           color: "plum",
+          routineId: "",
           startDate: "2026-07-01",
           weekdays: [1, 3, 5],
         }}
         mode="edit"
+        routines={[]}
       />,
     );
 
@@ -127,10 +160,12 @@ describe("HabitForm", () => {
           name: "Read",
           icon: "📚",
           color: "plum",
+          routineId: "",
           startDate: "2026-07-01",
           weekdays: [1, 3, 5],
         }}
         mode="edit"
+        routines={[]}
       />,
     );
 

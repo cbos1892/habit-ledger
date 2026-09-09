@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { validateHabitForm } from "./habit-form";
 
 function habitFormData(
-  values: Partial<Record<"name" | "icon" | "color" | "startDate", string>> & {
+  values: Partial<
+    Record<"name" | "icon" | "color" | "routineId" | "startDate", string>
+  > & {
     weekdays?: string[];
   } = {},
 ) {
@@ -11,6 +13,7 @@ function habitFormData(
   data.set("name", values.name ?? "Morning walk");
   data.set("icon", values.icon ?? "🌿");
   data.set("color", values.color ?? "fern");
+  data.set("routineId", values.routineId ?? "");
   data.set("startDate", values.startDate ?? "2026-08-10");
   for (const weekday of values.weekdays ?? [
     "1",
@@ -38,6 +41,7 @@ describe("habit form validation", () => {
         name: "Morning walk",
         icon: "🌿",
         color: "fern",
+        routineId: null,
         startDate: "2026-08-10",
         weekdays: [1, 2, 3, 4, 5, 6, 7],
       },
@@ -45,9 +49,25 @@ describe("habit form validation", () => {
         name: "Morning walk",
         icon: "🌿",
         color: "fern",
+        routineId: "",
         startDate: "2026-08-10",
         weekdays: [1, 2, 3, 4, 5, 6, 7],
       },
+    });
+  });
+
+  it("accepts an optional routine and rejects malformed routine IDs", () => {
+    const routineId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+
+    expect(validateHabitForm(habitFormData({ routineId }))).toMatchObject({
+      success: true,
+      data: { routineId },
+    });
+    expect(
+      validateHabitForm(habitFormData({ routineId: "not-a-routine" })),
+    ).toMatchObject({
+      success: false,
+      errors: { routineId: expect.any(String) },
     });
   });
 

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
-import { Button, Feedback, TextField } from "@/components/ui";
+import { Button, Feedback, SelectField, TextField } from "@/components/ui";
 import {
   HABIT_COLORS,
   HABIT_ICON_MAX_LENGTH,
   type HabitFormValues,
 } from "@/lib/habit-form";
 import { ISO_WEEKDAYS, type IsoWeekday } from "@/lib/habit-schedule";
+import type { Routine } from "@/lib/habits";
 
 import type { HabitFormState } from "./habit-actions";
 import styles from "./habit-form.module.css";
@@ -23,6 +24,7 @@ type HabitFormProps = {
   ) => Promise<HabitFormState>;
   initialValues: HabitFormValues;
   mode: "create" | "edit";
+  routines: readonly Routine[];
 };
 
 const colorLabels: Record<(typeof HABIT_COLORS)[number], string> = {
@@ -43,7 +45,12 @@ const weekdayLabels: Record<IsoWeekday, string> = {
   7: "Sunday",
 };
 
-export function HabitForm({ action, initialValues, mode }: HabitFormProps) {
+export function HabitForm({
+  action,
+  initialValues,
+  mode,
+  routines,
+}: HabitFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [weekdays, setWeekdays] = useState(initialValues.weekdays);
   const values = state.status === "error" ? state.values : initialValues;
@@ -96,6 +103,24 @@ export function HabitForm({ action, initialValues, mode }: HabitFormProps) {
           required
         />
       </div>
+
+      <SelectField
+        defaultValue={values.routineId}
+        description="Choose a routine, or keep this habit in the standalone list."
+        disabled={pending}
+        error={errors.routineId}
+        id="habit-routine"
+        label="Routine"
+        name="routineId"
+        optional
+      >
+        <option value="">Standalone</option>
+        {routines.map((routine) => (
+          <option key={routine.id} value={routine.id}>
+            {routine.name}
+          </option>
+        ))}
+      </SelectField>
 
       <fieldset
         aria-describedby={errors.color ? "habit-color-error" : undefined}

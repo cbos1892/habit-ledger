@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Card } from "@/components/ui";
+import { getRoutines } from "@/lib/habits";
 import { requireTimeZoneContext } from "@/lib/profile";
 import { ISO_WEEKDAYS } from "@/lib/habit-schedule";
 import { toLocalDateKey } from "@/lib/time-zone";
@@ -14,8 +15,22 @@ export const metadata: Metadata = {
   description: "Create a visually distinctive binary habit.",
 };
 
-export default async function NewHabitPage() {
+export default async function NewHabitPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ routineId?: string | string[] }>;
+}) {
   const profile = await requireTimeZoneContext();
+  const [routines, query] = await Promise.all([
+    getRoutines(profile.id),
+    searchParams,
+  ]);
+  const requestedRoutineId = Array.isArray(query.routineId)
+    ? query.routineId[0]
+    : query.routineId;
+  const routineId = routines.some(({ id }) => id === requestedRoutineId)
+    ? (requestedRoutineId ?? "")
+    : "";
 
   return (
     <section aria-labelledby="page-title" className={styles.settings}>
@@ -35,10 +50,12 @@ export default async function NewHabitPage() {
             name: "",
             icon: "",
             color: "fern",
+            routineId,
             startDate: toLocalDateKey(new Date(), profile.time_zone),
             weekdays: [...ISO_WEEKDAYS],
           }}
           mode="create"
+          routines={routines}
         />
       </Card>
     </section>

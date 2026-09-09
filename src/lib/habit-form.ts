@@ -9,14 +9,16 @@ export type HabitFormValues = {
   name: string;
   icon: string;
   color: string;
+  routineId: string;
   startDate: string;
   weekdays: IsoWeekday[];
 };
 
 export type HabitFormErrors = Partial<Record<keyof HabitFormValues, string>>;
 
-export type ValidatedHabit = Omit<HabitFormValues, "color"> & {
+export type ValidatedHabit = Omit<HabitFormValues, "color" | "routineId"> & {
   color: HabitColor;
+  routineId: string | null;
 };
 
 export type HabitFormValidation =
@@ -48,6 +50,12 @@ function isLocalDate(value: string) {
   );
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
 function countGraphemes(value: string) {
   return Array.from(
     new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(value),
@@ -74,6 +82,7 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
     name: readText(formData, "name"),
     icon: readText(formData, "icon"),
     color: readText(formData, "color"),
+    routineId: readText(formData, "routineId"),
     startDate: readText(formData, "startDate"),
     weekdays: schedule.weekdays,
   };
@@ -97,6 +106,10 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
     errors.color = "Choose one of the available habit colors.";
   }
 
+  if (values.routineId && !isUuid(values.routineId)) {
+    errors.routineId = "Choose an available routine.";
+  }
+
   if (!isLocalDate(values.startDate)) {
     errors.startDate = "Choose a valid start date.";
   }
@@ -111,7 +124,11 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
 
   return {
     success: true,
-    data: { ...values, color: values.color as HabitColor },
+    data: {
+      ...values,
+      color: values.color as HabitColor,
+      routineId: values.routineId || null,
+    },
     values,
   };
 }
