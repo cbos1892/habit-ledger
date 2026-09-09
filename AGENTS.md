@@ -14,7 +14,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   `https://app.notion.com/p/3b3ba7af1f5a80f49276eb9a34497cc6`.
 - Before beginning a tracker task, fetch its Notion page and use its goal and
   acceptance criteria as the implementation contract. Set its status to **In
-  Progress** when work begins.
+  progress** when work begins.
 - When the acceptance criteria and relevant verification are complete, set the
   task status to **Done** and write the resulting GitHub PR URL to its `PR`
   property.
