@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   useEffect,
   useOptimistic,
   useRef,
@@ -70,35 +71,15 @@ function getTodayHabits(today: TodayViewModel): readonly TodayHabit[] {
   return today.sections.flatMap(({ habits }) => habits);
 }
 
-function getDisplaySections(
-  today: TodayViewModel,
-  heldRoutineId: string | null,
-): readonly TodaySection[] {
+function getDisplaySections(today: TodayViewModel): readonly TodaySection[] {
   if (today.status === "empty") return [];
 
   const standalone = today.sections.filter(
     (section) => section.kind === "standalone",
   );
-  const routines = today.sections
-    .filter((section) => section.kind === "routine")
-    .map((section, index) => ({
-      complete: section.progress.completedCount === section.progress.totalCount,
-      index,
-      section,
-    }))
-    .sort((left, right) => {
-      // Keep the final completed routine in place for a moment so its feedback
-      // is visible before it moves below unfinished routines.
-      const leftComplete =
-        left.complete && left.section.routine.id !== heldRoutineId;
-      const rightComplete =
-        right.complete && right.section.routine.id !== heldRoutineId;
-
-      return (
-        Number(leftComplete) - Number(rightComplete) || left.index - right.index
-      );
-    })
-    .map(({ section }) => section);
+  const routines = today.sections.filter(
+    (section) => section.kind === "routine",
+  );
 
   return [...standalone, ...routines];
 }
@@ -121,6 +102,9 @@ function Progress({
 }) {
   const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
   const perfect = completed === total && total > 0;
+  const progressStyle = {
+    "--today-progress": `${percentage}%`,
+  } as CSSProperties;
 
   return (
     <section
@@ -129,6 +113,20 @@ function Progress({
       data-celebrating={celebrating}
       data-perfect={perfect}
     >
+      <div
+        aria-label={`${completed} of ${total} habits complete`}
+        aria-valuemax={total}
+        aria-valuemin={0}
+        aria-valuenow={completed}
+        className={styles.progressRing}
+        role="progressbar"
+        style={progressStyle}
+      >
+        <span>
+          <strong>{completed}</strong>
+          <small>of {total}</small>
+        </span>
+      </div>
       <div className={styles.progressCopy}>
         <div className={styles.progressText}>
           <div className={styles.progressHeading}>
@@ -149,26 +147,6 @@ function Progress({
               : "A little progress is still progress."}
           </p>
         </div>
-        <p
-          className={styles.progressCount}
-          aria-label={`${completed} of ${total} habits complete`}
-        >
-          <strong>{completed}</strong>
-          <span> / {total}</span>
-        </p>
-      </div>
-      <div
-        className={styles.progressTrack}
-        role="progressbar"
-        aria-label="Habits completed today"
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-valuenow={completed}
-      >
-        <span
-          className={styles.progressFill}
-          style={{ width: `${percentage}%` }}
-        />
       </div>
     </section>
   );
@@ -185,15 +163,11 @@ export function TodayView({ today }: TodayViewProps) {
     null,
   );
   const [showScrollFade, setShowScrollFade] = useState(false);
-  const [expandedRoutineIds, setExpandedRoutineIds] = useState<
-    ReadonlySet<string>
-  >(new Set());
-  const [heldRoutineId, setHeldRoutineId] = useState<string | null>(null);
   const latestMutationByHabit = useRef(new Map<string, number>());
   const mutationSequence = useRef(0);
   const stickySentinelRef = useRef<HTMLDivElement>(null);
   const habits = getTodayHabits(optimisticToday);
-  const displaySections = getDisplaySections(optimisticToday, heldRoutineId);
+  const displaySections = getDisplaySections(optimisticToday);
   const dateLabel = formatLocalDate(optimisticToday.localDate);
   const completionNotice = notice ? (
     <div className={styles.notice} role="alert">
@@ -226,21 +200,6 @@ export function TodayView({ today }: TodayViewProps) {
   }, [celebrationMutation]);
 
   useEffect(() => {
-    if (!heldRoutineId) return;
-
-    const timeout = window.setTimeout(() => {
-      setExpandedRoutineIds((current) => {
-        const next = new Set(current);
-        next.delete(heldRoutineId);
-        return next;
-      });
-      setHeldRoutineId(null);
-    }, 700);
-
-    return () => window.clearTimeout(timeout);
-  }, [heldRoutineId]);
-
-  useEffect(() => {
     const sentinel = stickySentinelRef.current;
 
     if (!sentinel || typeof IntersectionObserver === "undefined") return;
@@ -268,19 +227,6 @@ export function TodayView({ today }: TodayViewProps) {
     latestMutationByHabit.current.set(habitId, mutationId);
     setNotice(null);
     setCelebrationMutation(completesToday ? mutationId : null);
-
-    const routine = optimisticToday.sections.find(
-      (section) =>
-        section.kind === "routine" &&
-        section.habits.some(({ id }) => id === habitId),
-    );
-    if (routine?.kind === "routine") {
-      const completingRoutine =
-        nextCompleted &&
-        routine.progress.completedCount + 1 === routine.progress.totalCount;
-      if (completingRoutine) setHeldRoutineId(routine.routine.id);
-      if (!nextCompleted) setHeldRoutineId(null);
-    }
 
     startTransition(async () => {
       setOptimisticCompletion({ habitId, completed: nextCompleted });
@@ -368,7 +314,7 @@ export function TodayView({ today }: TodayViewProps) {
             />
             <div className={styles.listHeading}>
               <h2 id="today-habits-title">Today&apos;s habits</h2>
-              <p>Choose a card to update it.</p>
+              <p>Tap a habit to update it.</p>
             </div>
             {completionNotice}
           </div>
@@ -386,18 +332,8 @@ export function TodayView({ today }: TodayViewProps) {
                 </ul>
               ) : (
                 <RoutineCard
-                  expanded={expandedRoutineIds.has(section.routine.id)}
                   key={section.routine.id}
                   mutateCompletion={mutateCompletion}
-                  onToggle={() =>
-                    setExpandedRoutineIds((current) => {
-                      const next = new Set(current);
-                      if (next.has(section.routine.id))
-                        next.delete(section.routine.id);
-                      else next.add(section.routine.id);
-                      return next;
-                    })
-                  }
                   section={section}
                 />
               ),
@@ -419,22 +355,20 @@ function HabitCard({
   return (
     <li>
       <button
-        className={styles.habitCard}
-        data-color={habit.color}
+        className={styles.habitRow}
         type="button"
         aria-pressed={habit.completed}
         aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
         onClick={() => mutateCompletion(habit.id)}
       >
         <span className={styles.habitIdentity}>
-          <span className={styles.habitIcon} aria-hidden="true">
-            {habit.icon}
+          <span className={styles.checkmark} aria-hidden="true">
+            {habit.completed ? "✓" : ""}
           </span>
           <span className={styles.habitName}>{habit.name}</span>
         </span>
-        <span className={styles.completion} aria-hidden="true">
-          <span className={styles.checkmark}>{habit.completed ? "✓" : ""}</span>
-          <span>{habit.completed ? "Complete" : "Check in"}</span>
+        <span className={styles.habitAction} aria-hidden="true">
+          {habit.completed ? "Complete" : "Check in"}
         </span>
       </button>
     </li>
@@ -442,55 +376,41 @@ function HabitCard({
 }
 
 function RoutineCard({
-  expanded,
   mutateCompletion,
-  onToggle,
   section,
 }: {
-  expanded: boolean;
   mutateCompletion: (habitId: string) => void;
-  onToggle: () => void;
   section: Extract<TodaySection, { kind: "routine" }>;
 }) {
   const { completedCount, totalCount } = section.progress;
-  const contentId = `routine-${section.routine.id}`;
   return (
     <section
-      className={styles.routineCard}
+      className={styles.routine}
       data-complete={completedCount === totalCount}
-      data-expanded={expanded}
-      aria-labelledby={`${contentId}-title`}
+      aria-labelledby={`routine-${section.routine.id}-title`}
     >
-      <button
-        className={styles.routineToggle}
-        type="button"
-        aria-expanded={expanded}
-        aria-controls={contentId}
-        onClick={onToggle}
-      >
+      <header className={styles.routineHeading}>
         <span>
-          <span className={styles.routineName} id={`${contentId}-title`}>
+          <span
+            className={styles.routineName}
+            id={`routine-${section.routine.id}-title`}
+          >
             {section.routine.name}
           </span>
           <span className={styles.routineProgress}>
             {completedCount} of {totalCount}
           </span>
         </span>
-        <span className={styles.chevron} aria-hidden="true">
-          ⌄
-        </span>
-      </button>
-      {expanded ? (
-        <ul className={styles.routineHabitList} id={contentId}>
-          {section.habits.map((habit) => (
-            <HabitCard
-              habit={habit}
-              key={habit.id}
-              mutateCompletion={mutateCompletion}
-            />
-          ))}
-        </ul>
-      ) : null}
+      </header>
+      <ul className={styles.routineHabitList}>
+        {section.habits.map((habit) => (
+          <HabitCard
+            habit={habit}
+            key={habit.id}
+            mutateCompletion={mutateCompletion}
+          />
+        ))}
+      </ul>
     </section>
   );
 }

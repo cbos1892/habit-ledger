@@ -103,7 +103,7 @@ describe("Today view", () => {
       "2",
     );
     expect(screen.getByRole("progressbar")).toHaveAccessibleName(
-      "Habits completed today",
+      "1 of 2 habits complete",
     );
     expect(
       screen.getByText("A little progress is still progress."),
@@ -114,7 +114,6 @@ describe("Today view", () => {
     expect(
       screen.getByRole("button", { name: "Read, not complete" }),
     ).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("🌿📚✨")).toBeInTheDocument();
   });
 
   it("keeps the completed progress state encouraging and accessible", () => {
@@ -172,8 +171,7 @@ describe("Today view", () => {
     );
   });
 
-  it("keeps routines independently expandable and nested below standalone habits", async () => {
-    const user = userEvent.setup();
+  it("keeps routines open and grouped below standalone habits", () => {
     render(
       <TodayView
         today={{
@@ -199,21 +197,18 @@ describe("Today view", () => {
       />,
     );
 
-    const toggle = screen.getByRole("button", { name: /Morning ritual/ });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(
-      screen.queryByRole("button", { name: "Make coffee, not complete" }),
-    ).not.toBeInTheDocument();
-
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
+      screen.getByRole("region", { name: "Morning ritual" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Make coffee, not complete" }),
     ).toBeInTheDocument();
     expect(
       screen
         .getByRole("button", { name: "Morning walk, not complete" })
-        .compareDocumentPosition(toggle),
+        .compareDocumentPosition(
+          screen.getByRole("region", { name: "Morning ritual" }),
+        ),
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
