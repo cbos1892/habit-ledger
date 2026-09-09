@@ -6,7 +6,7 @@ function Brand() {
   return (
     <div className="brand" aria-label="Habit Ledger">
       <span className="brand-mark" aria-hidden="true">
-        H
+        H.
       </span>
       <span>Habit Ledger</span>
     </div>
@@ -35,13 +35,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SignOutForm />
       </header>
 
-      <aside className="app-navigation-frame">
+      <aside className="app-navigation-frame" aria-label="Application sidebar">
         <div className="desktop-brand">
           <Brand />
         </div>
         <PrimaryNavigation />
         <div className="desktop-footer">
-          <Link href="/settings/time-zone">Time zone</Link>
+          <Link className="settings-link" href="/settings/time-zone">
+            Time zone
+          </Link>
           <p className="desktop-note">A quiet place for steady progress.</p>
           <SignOutForm />
         </div>
