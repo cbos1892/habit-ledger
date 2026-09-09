@@ -9,8 +9,14 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   archiveHabit,
   createHabit,
+  createRoutine,
+  deleteRoutine,
   moveHabit,
+  moveRoutine,
+  moveRoutineHabit,
+  renameRoutine,
   restoreHabit,
+  setHabitRoutine,
   updateHabit,
 } from "./habit-actions";
 
@@ -32,6 +38,7 @@ function habitFormData(
   data.set("name", overrides.name ?? "Morning walk");
   data.set("icon", overrides.icon ?? "🌿");
   data.set("color", overrides.color ?? "fern");
+  data.set("routineId", overrides.routineId ?? "");
   data.set("startDate", overrides.startDate ?? "2026-08-10");
   for (const weekday of overrides.weekdays ?? [
     "1",
@@ -81,10 +88,11 @@ describe("habit form actions", () => {
       createHabit({ status: "idle" }, habitFormData()),
     ).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(rpc).toHaveBeenCalledWith("create_habit_with_schedule", {
+    expect(rpc).toHaveBeenCalledWith("create_habit_with_schedule_and_routine", {
       p_color: "fern",
       p_icon: "🌿",
       p_name: "Morning walk",
+      p_routine_id: null,
       p_start_date: "2026-08-10",
       p_weekdays: [1, 2, 3, 4, 5, 6, 7],
     });
@@ -102,11 +110,12 @@ describe("habit form actions", () => {
       updateHabit("habit-123", { status: "idle" }, habitFormData()),
     ).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(rpc).toHaveBeenCalledWith("update_habit_with_schedule", {
+    expect(rpc).toHaveBeenCalledWith("update_habit_with_schedule_and_routine", {
       p_color: "fern",
       p_habit_id: "habit-123",
       p_icon: "🌿",
       p_name: "Morning walk",
+      p_routine_id: null,
       p_start_date: "2026-08-10",
       p_weekdays: [1, 2, 3, 4, 5, 6, 7],
     });
@@ -142,7 +151,7 @@ describe("habit form actions", () => {
 
     await expect(moveHabit(data)).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(rpc).toHaveBeenCalledWith("move_habit", {
+    expect(rpc).toHaveBeenCalledWith("move_standalone_habit", {
       p_direction: "up",
       p_habit_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     });
@@ -150,6 +159,92 @@ describe("habit form actions", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/today");
     expect(revalidatePath).toHaveBeenCalledWith("/week");
     expect(redirect).toHaveBeenCalledWith("/setup?habit=moved");
+  });
+
+  it("creates and renames duplicate-friendly named routines", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: "routine-123", error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
+    const data = new FormData();
+    data.set("name", "Morning");
+
+    await expect(createRoutine({ status: "idle" }, data)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(rpc).toHaveBeenCalledWith("create_routine", { p_name: "Morning" });
+
+    vi.clearAllMocks();
+    vi.mocked(requireCurrentUser).mockResolvedValue({ id: "user-123" });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
+    await expect(
+      renameRoutine("routine-123", { status: "idle" }, data),
+    ).rejects.toThrow("NEXT_REDIRECT");
+    expect(rpc).toHaveBeenCalledWith("rename_routine", {
+      p_name: "Morning",
+      p_routine_id: "routine-123",
+    });
+  });
+
+  it("returns routine names when validation or persistence fails", async () => {
+    const empty = new FormData();
+    empty.set("name", " ");
+    expect(await createRoutine({ status: "idle" }, empty)).toMatchObject({
+      status: "error",
+      errors: { name: expect.any(String) },
+      values: { name: "" },
+    });
+
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "no" } }),
+    } as never);
+    const named = new FormData();
+    named.set("name", "Evening reset");
+    expect(await createRoutine({ status: "idle" }, named)).toMatchObject({
+      status: "error",
+      values: { name: "Evening reset" },
+    });
+  });
+
+  it("routes routine and membership controls through owner-scoped RPCs", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: "ok", error: null });
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({ rpc } as never);
+    const data = managementFormData();
+    data.set("routineId", "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+    data.set("direction", "down");
+
+    await expect(moveRoutine(data)).rejects.toThrow("NEXT_REDIRECT");
+    expect(rpc).toHaveBeenCalledWith("move_routine", {
+      p_direction: "down",
+      p_routine_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    });
+
+    await expect(moveRoutineHabit(data)).rejects.toThrow("NEXT_REDIRECT");
+    expect(rpc).toHaveBeenCalledWith("move_habit_in_routine", {
+      p_direction: "down",
+      p_habit_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+
+    await expect(setHabitRoutine(data)).rejects.toThrow("NEXT_REDIRECT");
+    expect(rpc).toHaveBeenCalledWith("assign_habit_to_routine", {
+      p_habit_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      p_routine_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    });
+
+    await expect(deleteRoutine(data)).rejects.toThrow("NEXT_REDIRECT");
+    expect(rpc).toHaveBeenCalledWith("delete_routine", {
+      p_routine_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    });
+  });
+
+  it("returns to Setup with clear rollback feedback when a membership move fails", async () => {
+    vi.mocked(createServerSupabaseClient).mockResolvedValue({
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { message: "no" } }),
+    } as never);
+    const data = managementFormData();
+    data.set("routineId", "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+
+    await expect(setHabitRoutine(data)).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(redirect).toHaveBeenCalledWith("/setup?routine=membership-error");
   });
 
   it("archives and restores only the identified owned habit", async () => {

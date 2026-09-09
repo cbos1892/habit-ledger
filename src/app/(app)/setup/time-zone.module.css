@@ -215,7 +215,139 @@
 
 .habitLists {
   display: grid;
+  gap: var(--space-7);
+}
+
+.standaloneSection,
+.routineList {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.subsectionHeading,
+.routineHabitHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.subsectionHeading h3,
+.subsectionHeading p,
+.routineHabitHeading h4,
+.routineHeader h3,
+.routineHeader p,
+.emptyRoutine,
+.archivedContext {
+  margin: 0;
+}
+
+.subsectionHeading h3,
+.routineHeader h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 550;
+  letter-spacing: -0.025em;
+}
+
+.subsectionHeading p,
+.routineHeader > div > p:not(.routineEyebrow),
+.emptyRoutine,
+.archivedContext {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.textLink {
+  width: fit-content;
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-hover);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.textLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.textLink:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.routineCard {
+  display: grid;
   gap: var(--space-5);
+  border-left: 0.3rem solid var(--color-accent);
+  background: var(--color-surface-subtle);
+  padding: clamp(var(--space-4), 4vw, var(--space-6));
+}
+
+.routineHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.routineHeader > div:first-child {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.routineEyebrow {
+  color: var(--color-accent-hover);
+  font-size: var(--text-xs);
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.routineControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.routineControls form {
+  display: flex;
+  margin: 0;
+}
+
+.routineNameForm {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.routineNameFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.routineNameFields button {
+  min-height: 2.75rem;
+}
+
+.routineHabitHeading {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.routineHabitHeading h4 {
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.emptyRoutine {
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
 }
 
 .habitCard,
@@ -224,6 +356,37 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-3);
   align-items: center;
+}
+
+.membershipForm {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: auto minmax(8rem, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.membershipForm label {
+  font-size: var(--text-sm);
+  font-weight: 750;
+}
+
+.membershipForm select {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  padding: 0 var(--space-2);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.membershipForm select:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .habitIdentityGroup {
@@ -358,12 +521,36 @@
   .habitControls {
     justify-self: end;
   }
+
+  .archivedContext {
+    justify-self: start;
+  }
 }
 
 @media (max-width: 32rem) {
   .sectionHeading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .routineHeader,
+  .subsectionHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .routineControls {
+    justify-content: flex-start;
+  }
+
+  .routineNameFields,
+  .membershipForm {
+    grid-template-columns: 1fr;
+  }
+
+  .routineNameFields button,
+  .membershipForm button {
+    width: 100%;
   }
 
   .habitControls {

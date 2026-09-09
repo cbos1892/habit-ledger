@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(50);
+select plan(53);
 
 select has_table('public', 'routines', 'routines table exists');
 select col_is_pk('public', 'routines', 'id', 'routine id is the primary key');
@@ -30,6 +30,17 @@ select has_function('public', 'move_routine', array['uuid', 'text']);
 select has_function('public', 'assign_habit_to_routine', array['uuid', 'uuid']);
 select has_function('public', 'move_habit_in_routine', array['uuid', 'text']);
 select has_function('public', 'unassign_habit_from_routine', array['uuid']);
+select has_function(
+  'public',
+  'create_habit_with_schedule_and_routine',
+  array['text', 'text', 'text', 'date', 'smallint[]', 'uuid']
+);
+select has_function(
+  'public',
+  'update_habit_with_schedule_and_routine',
+  array['uuid', 'text', 'text', 'text', 'date', 'smallint[]', 'uuid']
+);
+select has_function('public', 'move_standalone_habit', array['uuid', 'text']);
 
 insert into auth.users (id, email)
 values

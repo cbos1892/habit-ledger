@@ -223,6 +223,17 @@ export type Database = {
         };
         Returns: string;
       };
+      create_habit_with_schedule_and_routine: {
+        Args: {
+          p_color: string;
+          p_icon: string;
+          p_name: string;
+          p_routine_id: string | null;
+          p_start_date: string;
+          p_weekdays: number[];
+        };
+        Returns: string;
+      };
       create_routine: { Args: { p_name: string }; Returns: string };
       delete_routine: { Args: { p_routine_id: string }; Returns: string };
       move_habit: {
@@ -235,6 +246,10 @@ export type Database = {
       };
       move_routine: {
         Args: { p_direction: string; p_routine_id: string };
+        Returns: string;
+      };
+      move_standalone_habit: {
+        Args: { p_direction: string; p_habit_id: string };
         Returns: string;
       };
       rename_routine: {
@@ -252,6 +267,18 @@ export type Database = {
           p_habit_id: string;
           p_icon: string;
           p_name: string;
+          p_start_date: string;
+          p_weekdays: number[];
+        };
+        Returns: string;
+      };
+      update_habit_with_schedule_and_routine: {
+        Args: {
+          p_color: string;
+          p_habit_id: string;
+          p_icon: string;
+          p_name: string;
+          p_routine_id: string | null;
           p_start_date: string;
           p_weekdays: number[];
         };

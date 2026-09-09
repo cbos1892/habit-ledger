@@ -1,134 +1,178 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { describe, expect, it, vi } from "vitest";
 
-import type { Habit } from "@/lib/habits";
+import type { Routine } from "@/lib/habits";
+import type { SetupSection } from "@/lib/routine-view-models";
 
 import { HabitList } from "./habit-list";
 
-const activeHabits: Habit[] = [
+const routines: Routine[] = [
   {
-    archived_at: null,
-    color: "fern",
     display_order: 0,
-    icon: "🚶🌿✨",
-    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-    name: "Morning walk",
-    start_date: "2026-08-10",
-    weekdays: [1, 2, 3, 4, 5],
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    name: "Morning reset",
   },
   {
-    archived_at: null,
-    color: "plum",
     display_order: 1,
-    icon: "📚",
-    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    name: "Read",
-    start_date: "2026-08-10",
-    weekdays: [1, 3, 5],
+    id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    name: "Evening reset",
   },
 ];
 
-const archivedHabits: Habit[] = [
+const sections: SetupSection[] = [
   {
-    archived_at: "2026-08-11T20:00:00.000Z",
-    color: "ocean",
-    display_order: 2,
-    icon: "🧘",
-    id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-    name: "Meditate",
-    start_date: "2026-07-01",
-    weekdays: [7],
+    activeHabits: [
+      {
+        archivedAt: null,
+        color: "fern",
+        displayOrder: 0,
+        icon: "🚶🌿✨",
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        name: "Morning walk",
+        routineDisplayOrder: null,
+        startDate: "2026-08-10",
+        weekdays: [1, 2, 3, 4, 5],
+      },
+    ],
+    archivedHabits: [],
+    kind: "standalone",
+  },
+  {
+    activeHabits: [
+      {
+        archivedAt: null,
+        color: "plum",
+        displayOrder: 1,
+        icon: "📚",
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        name: "Read",
+        routineDisplayOrder: 0,
+        startDate: "2026-08-10",
+        weekdays: [1, 3, 5],
+      },
+    ],
+    archivedHabits: [
+      {
+        archivedAt: "2026-08-11T20:00:00.000Z",
+        color: "ocean",
+        displayOrder: 2,
+        icon: "🧘",
+        id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        name: "Meditate",
+        routineDisplayOrder: 1,
+        startDate: "2026-07-01",
+        weekdays: [7],
+      },
+    ],
+    kind: "routine",
+    routine: {
+      displayOrder: 0,
+      id: routines[0].id,
+      name: routines[0].name,
+    },
+  },
+  {
+    activeHabits: [],
+    archivedHabits: [],
+    kind: "routine",
+    routine: {
+      displayOrder: 1,
+      id: routines[1].id,
+      name: routines[1].name,
+    },
   },
 ];
 
 function renderList() {
   const actions = {
     archiveAction: vi.fn(async () => undefined),
-    moveAction: vi.fn(async () => undefined),
+    deleteRoutineAction: vi.fn(async () => undefined),
+    moveRoutineAction: vi.fn(async () => undefined),
+    moveRoutineHabitAction: vi.fn(async () => undefined),
+    moveStandaloneHabitAction: vi.fn(async () => undefined),
+    renameRoutineAction: vi.fn(async () => ({ status: "idle" }) as const),
     restoreAction: vi.fn(async () => undefined),
+    setHabitRoutineAction: vi.fn(async () => undefined),
   };
 
   const rendered = render(
-    <HabitList
-      activeHabits={activeHabits}
-      archivedHabits={archivedHabits}
-      {...actions}
-    />,
+    <HabitList routines={routines} sections={sections} {...actions} />,
   );
 
   return { ...actions, ...rendered };
 }
 
 describe("HabitList", () => {
-  it("renders active habits in order with accessible move controls", () => {
+  it("shows standalone habits first and visually separate routine containers", () => {
     renderList();
 
-    const items = screen.getAllByRole("listitem");
-    const morningControls = within(items[0]).getByRole("group", {
-      name: "Controls for Morning walk",
-    });
-    expect(within(items[0]).getByText("Morning walk")).toBeVisible();
-    expect(within(items[0]).getByText("🚶🌿✨")).toBeVisible();
+    const headings = screen.getAllByRole("heading", { level: 3 });
+    expect(headings.map(({ textContent }) => textContent)).toEqual([
+      "Standalone",
+      "Morning reset",
+      "Evening reset",
+    ]);
+    expect(screen.getByText("No active habits here yet.")).toBeVisible();
     expect(
-      within(morningControls).getByRole("button", {
-        name: "Move Morning walk up",
-      }),
+      screen.getAllByRole("link", { name: "New habit here" })[0],
+    ).toHaveAttribute("href", `/setup/habits/new?routineId=${routines[0].id}`);
+  });
+
+  it("offers accessible routine and routine-local habit ordering", () => {
+    renderList();
+
+    expect(
+      screen.getByRole("button", { name: "Move Morning reset routine up" }),
     ).toBeDisabled();
     expect(
-      within(morningControls).getByRole("button", {
-        name: "Move Morning walk down",
-      }),
+      screen.getByRole("button", { name: "Move Morning reset routine down" }),
     ).toBeEnabled();
-    expect(
-      within(morningControls).getByRole("link", { name: "Edit" }),
-    ).toHaveAttribute("href", `/setup/habits/${activeHabits[0].id}/edit`);
-    expect(
-      within(morningControls).getByRole("button", { name: "Archive" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Move Read up" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Move Read down" }),
     ).toBeDisabled();
   });
 
-  it("requires confirmation before archiving", () => {
-    const { archiveAction } = renderList();
+  it("moves habits between standalone and named routines", () => {
+    renderList();
+
+    const morningWalkItem = screen.getByText("Morning walk").closest("li");
+    expect(morningWalkItem).not.toBeNull();
+    expect(
+      within(morningWalkItem as HTMLElement).getByRole("combobox"),
+    ).toHaveValue("");
+    const readItem = screen.getByText("Read").closest("li");
+    expect(readItem).not.toBeNull();
+    expect(within(readItem as HTMLElement).getByRole("combobox")).toHaveValue(
+      routines[0].id,
+    );
+  });
+
+  it("requires an explicit history-preserving confirmation before deletion", () => {
+    const { deleteRoutineAction } = renderList();
     vi.spyOn(window, "confirm").mockReturnValue(false);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Archive" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]);
 
     expect(window.confirm).toHaveBeenCalledWith(
-      "Archive Morning walk? Its completion history will be kept.",
+      "Delete Morning reset? Its habits will become standalone. Their schedules and history will be kept.",
     );
-    expect(archiveAction).not.toHaveBeenCalled();
+    expect(deleteRoutineAction).not.toHaveBeenCalled();
   });
 
-  it("shows archived habits and offers restore", () => {
+  it("keeps archived habits out of active routine lists and restores them in context", () => {
     renderList();
 
-    const archivedControls = screen.getByRole("group", {
-      name: "Controls for Meditate",
-    });
-    expect(screen.getByText("Archived habits")).toBeVisible();
-    expect(screen.getByText("Meditate")).toBeVisible();
+    const archived = screen.getByText("Archived habits").closest("details");
+    expect(archived).not.toBeNull();
+    expect(within(archived as HTMLElement).getByText("Meditate")).toBeVisible();
     expect(
-      within(archivedControls).getByRole("button", { name: "Restore" }),
+      within(archived as HTMLElement).getByText("Morning reset routine"),
+    ).toBeVisible();
+    expect(
+      within(archived as HTMLElement).getByRole("button", { name: "Restore" }),
     ).toBeEnabled();
-  });
-
-  it("keeps management controls reachable in a predictable keyboard order", async () => {
-    const user = userEvent.setup();
-    renderList();
-
-    await user.tab();
-    expect(
-      screen.getByRole("button", { name: "Move Morning walk down" }),
-    ).toHaveFocus();
-    await user.tab();
-    expect(screen.getAllByRole("link", { name: "Edit" })[0]).toHaveFocus();
-    await user.tab();
-    expect(screen.getAllByRole("button", { name: "Archive" })[0]).toHaveFocus();
   });
 
   it("has no detectable structural accessibility violations", async () => {
@@ -136,7 +180,6 @@ describe("HabitList", () => {
 
     const results = await axe.run(container, {
       rules: {
-        // JSDOM does not calculate the rendered colors needed by this rule.
         "color-contrast": { enabled: false },
       },
     });

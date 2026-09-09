@@ -14,8 +14,14 @@ vi.mock("../../../lib/habits", () => ({
 }));
 vi.mock("./habit-actions", () => ({
   archiveHabit: vi.fn(),
+  createRoutine: vi.fn(async () => ({ status: "idle" })),
+  deleteRoutine: vi.fn(),
   moveHabit: vi.fn(),
+  moveRoutine: vi.fn(),
+  moveRoutineHabit: vi.fn(),
+  renameRoutine: vi.fn(),
   restoreHabit: vi.fn(),
+  setHabitRoutine: vi.fn(),
 }));
 
 describe("Setup page", () => {

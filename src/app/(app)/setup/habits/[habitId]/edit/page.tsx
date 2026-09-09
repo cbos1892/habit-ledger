@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Card } from "@/components/ui";
-import { getActiveHabit } from "@/lib/habits";
+import { getActiveHabit, getRoutines } from "@/lib/habits";
 import { requireTimeZoneContext } from "@/lib/profile";
 
 import { updateHabit } from "../../../habit-actions";
@@ -23,7 +23,10 @@ export default async function EditHabitPage({
     params,
     requireTimeZoneContext(),
   ]);
-  const habit = await getActiveHabit(profile.id, habitId);
+  const [habit, routines] = await Promise.all([
+    getActiveHabit(profile.id, habitId),
+    getRoutines(profile.id),
+  ]);
 
   if (!habit) notFound();
 
@@ -45,10 +48,12 @@ export default async function EditHabitPage({
             name: habit.name,
             icon: habit.icon,
             color: habit.color,
+            routineId: habit.routine_id ?? "",
             startDate: habit.start_date,
             weekdays: habit.weekdays,
           }}
           mode="edit"
+          routines={routines}
         />
       </Card>
     </section>

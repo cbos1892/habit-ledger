@@ -1,13 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Feedback } from "../../../components/ui";
+import { Card, Feedback } from "../../../components/ui";
 import { requireCurrentUser } from "../../../lib/auth/current-user";
 import { getSetupViewModel } from "../../../lib/habits";
 import { getNavigationItem } from "../../../lib/navigation";
 
-import { archiveHabit, moveHabit, restoreHabit } from "./habit-actions";
+import {
+  archiveHabit,
+  createRoutine,
+  deleteRoutine,
+  moveHabit,
+  moveRoutine,
+  moveRoutineHabit,
+  renameRoutine,
+  restoreHabit,
+  setHabitRoutine,
+} from "./habit-actions";
 import { HabitList } from "./habit-list";
+import { RoutineNameForm } from "./routine-name-form";
 import styles from "./time-zone.module.css";
 
 const route = getNavigationItem("setup");
@@ -18,6 +29,66 @@ const habitFeedbackTitles: Record<string, string> = {
   restored: "Habit restored",
   updated: "Habit updated",
 };
+const routineFeedback: Record<
+  string,
+  { message: string; title: string; tone: "danger" | "success" }
+> = {
+  assigned: {
+    message: "The habit is now in the selected routine.",
+    title: "Habit moved",
+    tone: "success",
+  },
+  created: {
+    message: "The new routine is ready for habits.",
+    title: "Routine created",
+    tone: "success",
+  },
+  deleted: {
+    message: "Its habits are standalone, with schedules and history intact.",
+    title: "Routine deleted",
+    tone: "success",
+  },
+  "delete-error": {
+    message: "Nothing changed. Try deleting the routine again.",
+    title: "Routine not deleted",
+    tone: "danger",
+  },
+  "habit-move-error": {
+    message: "The previous habit order is still in place.",
+    title: "Habit not reordered",
+    tone: "danger",
+  },
+  "habit-moved": {
+    message: "The routine's habit order is up to date.",
+    title: "Habit order updated",
+    tone: "success",
+  },
+  "membership-error": {
+    message: "The habit remains where it was. Try moving it again.",
+    title: "Habit not moved",
+    tone: "danger",
+  },
+  "move-error": {
+    message: "The previous routine order is still in place.",
+    title: "Routine not reordered",
+    tone: "danger",
+  },
+  moved: {
+    message: "The routine order is up to date.",
+    title: "Routine order updated",
+    tone: "success",
+  },
+  renamed: {
+    message: "The routine name is up to date.",
+    title: "Routine renamed",
+    tone: "success",
+  },
+  unassigned: {
+    message: "The habit is now in the standalone list.",
+    title: "Habit moved",
+    tone: "success",
+  },
+};
 
 export const metadata: Metadata = {
   title: route.label,
@@ -27,42 +98,36 @@ export const metadata: Metadata = {
 export default async function SetupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ habit?: string | string[] }>;
+  searchParams: Promise<{
+    habit?: string | string[];
+    routine?: string | string[];
+  }>;
 }) {
   const user = await requireCurrentUser();
   const [setup, query] = await Promise.all([
     getSetupViewModel(user.id),
     searchParams,
   ]);
-  const activeHabits = setup.sections.flatMap((section) =>
-    section.activeHabits.map((habit) => ({
-      archived_at: habit.archivedAt,
-      color: habit.color,
-      display_order: habit.displayOrder,
-      icon: habit.icon,
-      id: habit.id,
-      name: habit.name,
-      routine_display_order: habit.routineDisplayOrder,
-      start_date: habit.startDate,
-      weekdays: [...habit.weekdays],
-    })),
-  );
-  const archivedHabits = setup.sections.flatMap((section) =>
-    section.archivedHabits.map((habit) => ({
-      archived_at: habit.archivedAt,
-      color: habit.color,
-      display_order: habit.displayOrder,
-      icon: habit.icon,
-      id: habit.id,
-      name: habit.name,
-      routine_display_order: habit.routineDisplayOrder,
-      start_date: habit.startDate,
-      weekdays: [...habit.weekdays],
-    })),
+  const routines = setup.sections.flatMap((section) =>
+    section.kind === "routine"
+      ? [
+          {
+            display_order: section.routine.displayOrder,
+            id: section.routine.id,
+            name: section.routine.name,
+          },
+        ]
+      : [],
   );
   const habitStatus = Array.isArray(query.habit) ? query.habit[0] : query.habit;
   const habitFeedbackTitle = habitStatus
     ? habitFeedbackTitles[habitStatus]
+    : undefined;
+  const routineStatus = Array.isArray(query.routine)
+    ? query.routine[0]
+    : query.routine;
+  const currentRoutineFeedback = routineStatus
+    ? routineFeedback[routineStatus]
     : undefined;
 
   return (
@@ -85,24 +150,50 @@ export default async function SetupPage({
         </Feedback>
       ) : null}
 
+      {currentRoutineFeedback ? (
+        <Feedback
+          title={currentRoutineFeedback.title}
+          tone={currentRoutineFeedback.tone}
+        >
+          <p>{currentRoutineFeedback.message}</p>
+        </Feedback>
+      ) : null}
+
       <section aria-labelledby="habits-title" className={styles.habitsSection}>
         <div className={styles.sectionHeading}>
           <div>
             <h2 id="habits-title">Habits</h2>
             <p>Create a clear identity and choose when each habit appears.</p>
           </div>
-          <Link className={styles.primaryLink} href="/setup/habits/new">
-            New habit
-          </Link>
         </div>
 
         <HabitList
-          activeHabits={activeHabits}
           archiveAction={archiveHabit}
-          archivedHabits={archivedHabits}
-          moveAction={moveHabit}
+          deleteRoutineAction={deleteRoutine}
+          moveRoutineAction={moveRoutine}
+          moveRoutineHabitAction={moveRoutineHabit}
+          moveStandaloneHabitAction={moveHabit}
+          renameRoutineAction={renameRoutine}
           restoreAction={restoreHabit}
+          routines={routines}
+          sections={setup.sections}
+          setHabitRoutineAction={setHabitRoutine}
         />
+      </section>
+
+      <section
+        aria-labelledby="new-routine-title"
+        className={styles.habitsSection}
+      >
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2 id="new-routine-title">New routine</h2>
+            <p>Name a container now; add zero, one, or many habits later.</p>
+          </div>
+        </div>
+        <Card className={styles.card}>
+          <RoutineNameForm action={createRoutine} mode="create" />
+        </Card>
       </section>
 
       <Link className={styles.advancedSettingsLink} href="/settings/time-zone">
