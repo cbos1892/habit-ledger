@@ -18,17 +18,25 @@ vi.mock("./completion-actions", () => ({
   setHabitCompletion: vi.fn(),
 }));
 
+const readyHabit = {
+  id: "4d91111d-df1b-41f7-917f-a67a6ec1e20d",
+  name: "Morning walk",
+  icon: "🚶",
+  color: "fern",
+  completed: false,
+  completionId: null,
+  displayOrder: 0,
+  routineDisplayOrder: null,
+};
+
 const readyToday = {
   completedCount: 0,
-  habits: [
+  progress: { completedCount: 0, totalCount: 1 },
+  sections: [
     {
-      id: "4d91111d-df1b-41f7-917f-a67a6ec1e20d",
-      name: "Morning walk",
-      icon: "🚶",
-      color: "fern",
-      completed: false,
-      completionId: null,
-      displayOrder: 0,
+      habits: [readyHabit],
+      kind: "standalone" as const,
+      progress: { completedCount: 0, totalCount: 1 },
     },
   ],
   localDate: "2026-08-10",
@@ -47,24 +55,33 @@ describe("Today view", () => {
       <TodayView
         today={{
           completedCount: 1,
-          habits: [
+          progress: { completedCount: 1, totalCount: 2 },
+          sections: [
             {
-              id: "a",
-              name: "Morning walk",
-              icon: "🚶",
-              color: "fern",
-              completed: true,
-              completionId: "c1",
-              displayOrder: 0,
-            },
-            {
-              id: "b",
-              name: "Read",
-              icon: "🌿📚✨",
-              color: "plum",
-              completed: false,
-              completionId: null,
-              displayOrder: 1,
+              kind: "standalone",
+              progress: { completedCount: 1, totalCount: 2 },
+              habits: [
+                {
+                  id: "a",
+                  name: "Morning walk",
+                  icon: "🚶",
+                  color: "fern",
+                  completed: true,
+                  completionId: "c1",
+                  displayOrder: 0,
+                  routineDisplayOrder: null,
+                },
+                {
+                  id: "b",
+                  name: "Read",
+                  icon: "🌿📚✨",
+                  color: "plum",
+                  completed: false,
+                  completionId: null,
+                  displayOrder: 1,
+                  routineDisplayOrder: null,
+                },
+              ],
             },
           ],
           localDate: "2026-08-10",
@@ -106,11 +123,12 @@ describe("Today view", () => {
         today={{
           ...readyToday,
           completedCount: 1,
-          habits: [
+          progress: { completedCount: 1, totalCount: 1 },
+          sections: [
             {
-              ...readyToday.habits[0],
-              completed: true,
-              completionId: "c1",
+              ...readyToday.sections[0],
+              habits: [{ ...readyHabit, completed: true, completionId: "c1" }],
+              progress: { completedCount: 1, totalCount: 1 },
             },
           ],
         }}
@@ -204,7 +222,8 @@ describe("Today view", () => {
       <TodayView
         today={{
           completedCount: 0,
-          habits: [],
+          progress: { completedCount: 0, totalCount: 0 },
+          sections: [],
           localDate: "2026-08-10",
           status: "empty",
           timeZone: "UTC",
@@ -276,7 +295,7 @@ describe("Today view", () => {
     await act(async () => {
       resolveMutation?.({
         status: "success",
-        habitId: readyToday.habits[0].id,
+        habitId: readyHabit.id,
         completed: true,
         completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
         localDate: "2026-08-10",
@@ -318,7 +337,7 @@ describe("Today view", () => {
   it("does not show an undo action or success notice after completion", async () => {
     vi.mocked(setHabitCompletion).mockResolvedValue({
       status: "success",
-      habitId: readyToday.habits[0].id,
+      habitId: readyHabit.id,
       completed: true,
       completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
       localDate: "2026-08-10",
@@ -355,16 +374,8 @@ describe("Today view", () => {
       screen.getByRole("button", { name: "Morning walk, complete" }),
     );
 
-    expect(setHabitCompletion).toHaveBeenNthCalledWith(
-      1,
-      readyToday.habits[0].id,
-      true,
-    );
-    expect(setHabitCompletion).toHaveBeenNthCalledWith(
-      2,
-      readyToday.habits[0].id,
-      false,
-    );
+    expect(setHabitCompletion).toHaveBeenNthCalledWith(1, readyHabit.id, true);
+    expect(setHabitCompletion).toHaveBeenNthCalledWith(2, readyHabit.id, false);
     expect(
       screen.getByRole("button", { name: "Morning walk, not complete" }),
     ).toHaveAttribute("aria-pressed", "false");
@@ -372,14 +383,14 @@ describe("Today view", () => {
     await act(async () => {
       resolvers[0]?.({
         status: "success",
-        habitId: readyToday.habits[0].id,
+        habitId: readyHabit.id,
         completed: true,
         completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
         localDate: "2026-08-10",
       });
       resolvers[1]?.({
         status: "success",
-        habitId: readyToday.habits[0].id,
+        habitId: readyHabit.id,
         completed: false,
         completionId: null,
         localDate: "2026-08-10",
@@ -407,10 +418,7 @@ describe("Today view", () => {
 
     await user.keyboard(" ");
 
-    expect(setHabitCompletion).toHaveBeenCalledWith(
-      readyToday.habits[0].id,
-      true,
-    );
+    expect(setHabitCompletion).toHaveBeenCalledWith(readyHabit.id, true);
     expect(
       screen.getByRole("button", { name: "Morning walk, complete" }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -419,7 +427,7 @@ describe("Today view", () => {
     await act(async () => {
       resolveMutation?.({
         status: "success",
-        habitId: readyToday.habits[0].id,
+        habitId: readyHabit.id,
         completed: true,
         completionId: "1ebf23fd-61d1-4d9a-a376-ebfd9ec8ba4e",
         localDate: "2026-08-10",

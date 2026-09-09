@@ -88,6 +88,8 @@ export type Database = {
           id: string;
           name: string;
           owner_id: string;
+          routine_display_order: number | null;
+          routine_id: string | null;
           start_date: string;
           updated_at: string;
         };
@@ -100,6 +102,8 @@ export type Database = {
           id?: string;
           name: string;
           owner_id: string;
+          routine_display_order?: number | null;
+          routine_id?: string | null;
           start_date: string;
           updated_at?: string;
         };
@@ -112,6 +116,8 @@ export type Database = {
           id?: string;
           name?: string;
           owner_id?: string;
+          routine_display_order?: number | null;
+          routine_id?: string | null;
           start_date?: string;
           updated_at?: string;
         };
@@ -122,6 +128,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "habits_routine_owner_fk";
+            columns: ["routine_id", "owner_id"];
+            isOneToOne: false;
+            referencedRelation: "routines";
+            referencedColumns: ["id", "owner_id"];
           },
         ];
       };
@@ -155,13 +168,49 @@ export type Database = {
         };
         Relationships: [];
       };
+      routines: {
+        Row: {
+          created_at: string;
+          display_order: number;
+          id: string;
+          name: string;
+          owner_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_order: number;
+          id?: string;
+          name: string;
+          owner_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          display_order?: number;
+          id?: string;
+          name?: string;
+          owner_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "routines_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      archive_habit: {
-        Args: { p_habit_id: string };
+      archive_habit: { Args: { p_habit_id: string }; Returns: string };
+      assign_habit_to_routine: {
+        Args: { p_habit_id: string; p_routine_id: string };
         Returns: string;
       };
       create_habit_with_schedule: {
@@ -174,11 +223,26 @@ export type Database = {
         };
         Returns: string;
       };
+      create_routine: { Args: { p_name: string }; Returns: string };
+      delete_routine: { Args: { p_routine_id: string }; Returns: string };
       move_habit: {
         Args: { p_direction: string; p_habit_id: string };
         Returns: string;
       };
-      restore_habit: {
+      move_habit_in_routine: {
+        Args: { p_direction: string; p_habit_id: string };
+        Returns: string;
+      };
+      move_routine: {
+        Args: { p_direction: string; p_routine_id: string };
+        Returns: string;
+      };
+      rename_routine: {
+        Args: { p_name: string; p_routine_id: string };
+        Returns: string;
+      };
+      restore_habit: { Args: { p_habit_id: string }; Returns: string };
+      unassign_habit_from_routine: {
         Args: { p_habit_id: string };
         Returns: string;
       };

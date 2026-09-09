@@ -4,6 +4,10 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import { getWeeklyViewModel } from "./week";
 
+function getRows(model: Awaited<ReturnType<typeof getWeeklyViewModel>>) {
+  return model.sections.flatMap(({ rows }) => rows);
+}
+
 vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -59,8 +63,9 @@ describe("weekly view model", () => {
       "2026-08-08",
       "2026-08-09",
     ]);
-    expect(result.rows).toHaveLength(1);
-    expect(result.rows[0]?.cells).toEqual([
+    const rows = getRows(result);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.cells).toEqual([
       {
         completionId: null,
         localDate: "2026-08-03",
@@ -142,7 +147,8 @@ describe("weekly view model", () => {
       instant: "2026-08-06T18:00:00.000Z",
     });
 
-    expect(result.rows[0]?.cells.map(({ state }) => state)).toEqual([
+    const rows = getRows(result);
+    expect(rows[0]?.cells.map(({ state }) => state)).toEqual([
       "not-scheduled",
       "not-scheduled",
       "completed",
@@ -151,7 +157,7 @@ describe("weekly view model", () => {
       "incomplete",
       "incomplete",
     ]);
-    expect(result.rows[1]?.cells.map(({ state }) => state)).toEqual([
+    expect(rows[1]?.cells.map(({ state }) => state)).toEqual([
       "not-scheduled",
       "incomplete",
       "not-scheduled",
@@ -208,13 +214,14 @@ describe("weekly view model", () => {
       instant: "2026-08-05T18:00:00.000Z",
     });
 
-    expect(result.rows.map(({ id }) => id)).toEqual([
+    const rows = getRows(result);
+    expect(rows.map(({ id }) => id)).toEqual([
       "archived-relevant",
       "archived-with-history",
     ]);
-    expect(result.rows[0]?.cells[1]).toMatchObject({ state: "incomplete" });
-    expect(result.rows[0]?.cells[3]).toMatchObject({ state: "not-scheduled" });
-    expect(result.rows[1]?.cells[3]).toEqual({
+    expect(rows[0]?.cells[1]).toMatchObject({ state: "incomplete" });
+    expect(rows[0]?.cells[3]).toMatchObject({ state: "not-scheduled" });
+    expect(rows[1]?.cells[3]).toEqual({
       completionId: "historical-completion",
       localDate: "2026-08-06",
       state: "completed",
@@ -241,7 +248,7 @@ describe("weekly view model", () => {
         "2026-08-07",
         "2026-08-08",
       ],
-      rows: [],
+      sections: [],
       startDate: "2026-08-02",
       status: "empty",
       timeZone: "UTC",
@@ -287,10 +294,61 @@ describe("weekly view model", () => {
 
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.localDates)).toBe(true);
-    expect(Object.isFrozen(result.rows)).toBe(true);
-    expect(Object.isFrozen(result.rows[0])).toBe(true);
-    expect(Object.isFrozen(result.rows[0]?.cells)).toBe(true);
-    expect(Object.isFrozen(result.rows[0]?.cells[0])).toBe(true);
+    const rows = getRows(result);
+    expect(Object.isFrozen(result.sections)).toBe(true);
+    expect(Object.isFrozen(rows[0])).toBe(true);
+    expect(Object.isFrozen(rows[0]?.cells)).toBe(true);
+    expect(Object.isFrozen(rows[0]?.cells[0])).toBe(true);
+  });
+
+  it("returns standalone rows before joined routine groups", async () => {
+    finalOrder.mockResolvedValue({
+      data: [
+        {
+          archived_at: null,
+          color: "sun",
+          completions: [],
+          display_order: 0,
+          habit_schedules: [{ weekday: 1 }],
+          icon: "✍️",
+          id: "routine-habit",
+          name: "Journal",
+          routine_display_order: 0,
+          routine_id: "routine-a",
+          routines: { id: "routine-a", name: "Morning", display_order: 0 },
+          start_date: "2026-08-01",
+        },
+        {
+          archived_at: null,
+          color: "fern",
+          completions: [],
+          display_order: 10,
+          habit_schedules: [{ weekday: 1 }],
+          icon: "🚶",
+          id: "standalone",
+          name: "Walk",
+          routine_display_order: null,
+          routine_id: null,
+          routines: null,
+          start_date: "2026-08-01",
+        },
+      ],
+      error: null,
+    });
+
+    const result = await getWeeklyViewModel("user-123", "UTC", {
+      instant: "2026-08-03T12:00:00.000Z",
+    });
+
+    expect(result.sections.map(({ kind }) => kind)).toEqual([
+      "standalone",
+      "routine",
+    ]);
+    expect(result.sections[1]).toMatchObject({
+      kind: "routine",
+      routine: { id: "routine-a", name: "Morning" },
+      rows: [expect.objectContaining({ id: "routine-habit" })],
+    });
   });
 
   it("keeps query failures distinct from an empty result", async () => {

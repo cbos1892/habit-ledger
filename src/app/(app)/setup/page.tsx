@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Feedback } from "../../../components/ui";
 import { requireCurrentUser } from "../../../lib/auth/current-user";
-import { getActiveHabits, getArchivedHabits } from "../../../lib/habits";
+import { getSetupViewModel } from "../../../lib/habits";
 import { getNavigationItem } from "../../../lib/navigation";
 
 import { archiveHabit, moveHabit, restoreHabit } from "./habit-actions";
@@ -30,11 +30,36 @@ export default async function SetupPage({
   searchParams: Promise<{ habit?: string | string[] }>;
 }) {
   const user = await requireCurrentUser();
-  const [activeHabits, archivedHabits, query] = await Promise.all([
-    getActiveHabits(user.id),
-    getArchivedHabits(user.id),
+  const [setup, query] = await Promise.all([
+    getSetupViewModel(user.id),
     searchParams,
   ]);
+  const activeHabits = setup.sections.flatMap((section) =>
+    section.activeHabits.map((habit) => ({
+      archived_at: habit.archivedAt,
+      color: habit.color,
+      display_order: habit.displayOrder,
+      icon: habit.icon,
+      id: habit.id,
+      name: habit.name,
+      routine_display_order: habit.routineDisplayOrder,
+      start_date: habit.startDate,
+      weekdays: [...habit.weekdays],
+    })),
+  );
+  const archivedHabits = setup.sections.flatMap((section) =>
+    section.archivedHabits.map((habit) => ({
+      archived_at: habit.archivedAt,
+      color: habit.color,
+      display_order: habit.displayOrder,
+      icon: habit.icon,
+      id: habit.id,
+      name: habit.name,
+      routine_display_order: habit.routineDisplayOrder,
+      start_date: habit.startDate,
+      weekdays: [...habit.weekdays],
+    })),
+  );
   const habitStatus = Array.isArray(query.habit) ? query.habit[0] : query.habit;
   const habitFeedbackTitle = habitStatus
     ? habitFeedbackTitles[habitStatus]

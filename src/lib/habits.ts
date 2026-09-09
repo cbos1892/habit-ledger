@@ -2,6 +2,10 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isIsoWeekday, type IsoWeekday } from "@/lib/habit-schedule";
+import {
+  buildSetupRoutineViewModel,
+  type SetupRoutineViewModel,
+} from "@/lib/routine-view-models";
 import type { Tables } from "@/types/database";
 
 export type Habit = Pick<
@@ -13,10 +17,14 @@ export type Habit = Pick<
   | "start_date"
   | "display_order"
   | "archived_at"
-> & { weekdays: IsoWeekday[] };
+> & {
+  routine_id?: string | null;
+  routine_display_order?: number | null;
+  weekdays: IsoWeekday[];
+};
 
 const habitSelection =
-  "id, name, icon, color, start_date, display_order, archived_at, habit_schedules(weekday)" as const;
+  "id, name, icon, color, start_date, display_order, archived_at, routine_id, routine_display_order, habit_schedules(weekday)" as const;
 
 function withWeekdays(
   habit: Pick<
@@ -28,6 +36,8 @@ function withWeekdays(
     | "start_date"
     | "display_order"
     | "archived_at"
+    | "routine_id"
+    | "routine_display_order"
   > & { habit_schedules: { weekday: number }[] },
 ): Habit {
   const { habit_schedules, ...identity } = habit;
@@ -39,6 +49,40 @@ function withWeekdays(
       .filter(isIsoWeekday)
       .sort((a, b) => a - b),
   };
+}
+
+export async function getSetupViewModel(
+  ownerId: string,
+): Promise<SetupRoutineViewModel> {
+  const supabase = await createServerSupabaseClient();
+  const [routineResult, habitResult] = await Promise.all([
+    supabase
+      .from("routines")
+      .select("id, name, display_order")
+      .eq("owner_id", ownerId)
+      .order("display_order")
+      .order("id"),
+    supabase
+      .from("habits")
+      .select(habitSelection)
+      .eq("owner_id", ownerId)
+      .order("display_order")
+      .order("id"),
+  ]);
+
+  if (routineResult.error || habitResult.error) {
+    throw new Error("Unable to load habit setup.");
+  }
+
+  return buildSetupRoutineViewModel(
+    routineResult.data ?? [],
+    (habitResult.data ?? []).map((habit) => ({
+      ...withWeekdays(habit),
+      completions: [],
+      routine_display_order: habit.routine_display_order ?? null,
+      routine_id: habit.routine_id ?? null,
+    })),
+  );
 }
 
 export async function getActiveHabits(ownerId: string): Promise<Habit[]> {

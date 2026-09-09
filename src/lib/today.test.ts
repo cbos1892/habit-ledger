@@ -74,24 +74,33 @@ describe("today view model", () => {
 
     expect(result).toEqual({
       completedCount: 1,
-      habits: [
+      progress: { completedCount: 1, totalCount: 2 },
+      sections: [
         {
-          id: "habit-a",
-          name: "Morning walk",
-          icon: "🚶",
-          color: "fern",
-          completed: true,
-          completionId: "completion-a",
-          displayOrder: 10,
-        },
-        {
-          id: "habit-c",
-          name: "Evening stretch",
-          icon: "🧘",
-          color: "sun",
-          completed: false,
-          completionId: null,
-          displayOrder: 30,
+          kind: "standalone",
+          progress: { completedCount: 1, totalCount: 2 },
+          habits: [
+            {
+              id: "habit-a",
+              name: "Morning walk",
+              icon: "🚶",
+              color: "fern",
+              completed: true,
+              completionId: "completion-a",
+              displayOrder: 10,
+              routineDisplayOrder: null,
+            },
+            {
+              id: "habit-c",
+              name: "Evening stretch",
+              icon: "🧘",
+              color: "sun",
+              completed: false,
+              completionId: null,
+              displayOrder: 30,
+              routineDisplayOrder: null,
+            },
+          ],
         },
       ],
       localDate: "2026-08-10",
@@ -108,7 +117,7 @@ describe("today view model", () => {
     expect(firstOrder).toHaveBeenCalledWith("display_order");
     expect(finalOrder).toHaveBeenCalledWith("id");
     expect(Object.isFrozen(result)).toBe(true);
-    expect(Object.isFrozen(result.habits)).toBe(true);
+    expect(Object.isFrozen(result.sections)).toBe(true);
   });
 
   it("does not shift the local day near UTC midnight", async () => {
@@ -136,7 +145,8 @@ describe("today view model", () => {
       getTodayViewModel("user-123", "UTC", "2026-08-10T12:00:00.000Z"),
     ).resolves.toEqual({
       completedCount: 0,
-      habits: [],
+      progress: { completedCount: 0, totalCount: 0 },
+      sections: [],
       localDate: "2026-08-10",
       status: "empty",
       timeZone: "UTC",
@@ -165,12 +175,61 @@ describe("today view model", () => {
       getTodayViewModel("user-123", "UTC", "2026-08-10T12:00:00.000Z"),
     ).resolves.toEqual({
       completedCount: 0,
-      habits: [],
+      progress: { completedCount: 0, totalCount: 0 },
+      sections: [],
       localDate: "2026-08-10",
       status: "empty",
       timeZone: "UTC",
       totalCount: 0,
     });
+  });
+
+  it("returns standalone habits before joined routines without duplicating habits", async () => {
+    finalOrder.mockResolvedValue({
+      data: [
+        {
+          id: "routine-habit",
+          name: "Journal",
+          icon: "✍️",
+          color: "sun",
+          display_order: 0,
+          routine_id: "routine-a",
+          routine_display_order: 0,
+          routines: { id: "routine-a", name: "Morning", display_order: 0 },
+          start_date: "2026-08-01",
+          habit_schedules: [{ weekday: 1 }],
+          completions: [],
+        },
+        {
+          id: "standalone",
+          name: "Walk",
+          icon: "🚶",
+          color: "fern",
+          display_order: 10,
+          routine_id: null,
+          routine_display_order: null,
+          routines: null,
+          start_date: "2026-08-01",
+          habit_schedules: [{ weekday: 1 }],
+          completions: [],
+        },
+      ],
+      error: null,
+    });
+
+    const result = await getTodayViewModel(
+      "user-123",
+      "UTC",
+      "2026-08-10T12:00:00.000Z",
+    );
+
+    expect(result.sections.map(({ kind }) => kind)).toEqual([
+      "standalone",
+      "routine",
+    ]);
+    expect(
+      result.sections.flatMap(({ habits }) => habits.map(({ id }) => id)),
+    ).toEqual(["standalone", "routine-habit"]);
   });
 
   it("keeps query failures distinct from an empty result", async () => {

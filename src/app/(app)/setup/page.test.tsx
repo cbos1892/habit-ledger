@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { requireCurrentUser } from "../../../lib/auth/current-user";
-import { getActiveHabits, getArchivedHabits } from "../../../lib/habits";
+import { getSetupViewModel } from "../../../lib/habits";
 
 import SetupPage from "./page";
 
@@ -10,8 +10,7 @@ vi.mock("../../../lib/auth/current-user", () => ({
   requireCurrentUser: vi.fn(),
 }));
 vi.mock("../../../lib/habits", () => ({
-  getActiveHabits: vi.fn(),
-  getArchivedHabits: vi.fn(),
+  getSetupViewModel: vi.fn(),
 }));
 vi.mock("./habit-actions", () => ({
   archiveHabit: vi.fn(),
@@ -22,8 +21,10 @@ vi.mock("./habit-actions", () => ({
 describe("Setup page", () => {
   it("does not put time-zone confirmation in the setup path", async () => {
     vi.mocked(requireCurrentUser).mockResolvedValue({ id: "user-123" });
-    vi.mocked(getActiveHabits).mockResolvedValue([]);
-    vi.mocked(getArchivedHabits).mockResolvedValue([]);
+    vi.mocked(getSetupViewModel).mockResolvedValue({
+      sections: [],
+      status: "empty",
+    });
 
     render(await SetupPage({ searchParams: Promise.resolve({}) }));
 

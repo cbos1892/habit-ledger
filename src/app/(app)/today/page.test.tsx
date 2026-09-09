@@ -24,15 +24,23 @@ describe("Today page", () => {
     });
     vi.mocked(getTodayViewModel).mockResolvedValue({
       completedCount: 0,
-      habits: [
+      progress: { completedCount: 0, totalCount: 1 },
+      sections: [
         {
-          id: "habit-a",
-          name: "Morning walk",
-          icon: "🚶",
-          color: "fern",
-          completed: false,
-          completionId: null,
-          displayOrder: 0,
+          kind: "standalone",
+          progress: { completedCount: 0, totalCount: 1 },
+          habits: [
+            {
+              id: "habit-a",
+              name: "Morning walk",
+              icon: "🚶",
+              color: "fern",
+              completed: false,
+              completionId: null,
+              displayOrder: 0,
+              routineDisplayOrder: null,
+            },
+          ],
         },
       ],
       localDate: "2026-08-10",
@@ -58,7 +66,8 @@ describe("Today page", () => {
     });
     vi.mocked(getTodayViewModel).mockResolvedValue({
       completedCount: 0,
-      habits: [],
+      progress: { completedCount: 0, totalCount: 0 },
+      sections: [],
       localDate: "2026-08-10",
       status: "empty",
       timeZone: "UTC",
