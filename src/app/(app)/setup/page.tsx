@@ -132,7 +132,7 @@ export default async function SetupPage({
 
   return (
     <section aria-labelledby="page-title" className={styles.settings}>
-      <div className="page-heading">
+      <div className={`${styles.setupHeading} page-heading`}>
         <p className="page-eyebrow">Make it yours</p>
         <h1 className="page-title" id="page-title">
           Setup
@@ -159,7 +159,10 @@ export default async function SetupPage({
         </Feedback>
       ) : null}
 
-      <section aria-labelledby="habits-title" className={styles.habitsSection}>
+      <section
+        aria-labelledby="habits-title"
+        className={`${styles.habitsSection} ${styles.managementSection}`}
+      >
         <div className={styles.sectionHeading}>
           <div>
             <h2 id="habits-title">Habits</h2>
@@ -183,7 +186,7 @@ export default async function SetupPage({
 
       <section
         aria-labelledby="new-routine-title"
-        className={styles.habitsSection}
+        className={`${styles.habitsSection} ${styles.routineCreation}`}
       >
         <div className={styles.sectionHeading}>
           <div>
