@@ -108,6 +108,8 @@ describe("Today view", () => {
     expect(
       screen.getByText("A little progress is still progress."),
     ).toBeInTheDocument();
+    expect(screen.getByText("🚶")).toBeInTheDocument();
+    expect(screen.getByText("🌿📚✨")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Morning walk, complete" }),
     ).toHaveAttribute("aria-pressed", "true");

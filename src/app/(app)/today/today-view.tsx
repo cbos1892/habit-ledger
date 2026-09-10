@@ -365,6 +365,9 @@ function HabitCard({
           <span className={styles.checkmark} aria-hidden="true">
             {habit.completed ? "✓" : ""}
           </span>
+          <span className={styles.habitIcon} aria-hidden="true">
+            {habit.icon}
+          </span>
           <span className={styles.habitName}>{habit.name}</span>
         </span>
         <span className={styles.habitAction} aria-hidden="true">
