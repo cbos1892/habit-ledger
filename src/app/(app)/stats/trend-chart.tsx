@@ -116,6 +116,9 @@ export function TrendChart({ weekly }: TrendChartProps) {
               data-state={unavailable ? "unavailable" : "available"}
               key={week.startDate}
             >
+              <span className={styles.valueLabel} aria-hidden="true">
+                Rate
+              </span>
               <span className={styles.value} aria-hidden="true">
                 {unavailable ? "—" : `${percentage}%`}
               </span>
@@ -143,7 +146,7 @@ export function TrendChart({ weekly }: TrendChartProps) {
         })}
       </ol>
 
-      <div className={styles.legend} aria-hidden="true">
+      <div className={styles.legend} aria-label="Chart key">
         <span>
           <i data-legend="complete" /> Complete week
         </span>
