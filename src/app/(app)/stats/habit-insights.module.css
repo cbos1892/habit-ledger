@@ -70,29 +70,25 @@
 }
 
 .habitList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
+  border-top: 1px solid var(--color-border);
 }
 
 .habitCard {
   --habit-color: var(--habit-fern);
-  display: grid;
+  display: flex;
   min-width: 0;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
-  border: 1px solid
-    color-mix(in srgb, var(--habit-color) 30%, var(--color-border));
-  border-left: 0.3rem solid var(--habit-color);
-  border-radius: var(--radius-md);
-  background: color-mix(
-    in srgb,
-    var(--habit-color) 7%,
-    var(--color-surface-raised)
-  );
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-2);
+}
+
+.habitCard + .habitCard {
+  border-top: 1px solid var(--color-border);
 }
 
 .habitCard[data-color="ocean"] {
@@ -114,20 +110,16 @@
 .identity {
   display: flex;
   min-width: 0;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-3);
 }
 
 .icon {
-  display: grid;
-  width: 2.5rem;
-  min-width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
+  width: 1.35rem;
+  min-width: 1.35rem;
   overflow: hidden;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--habit-color) 16%, var(--color-surface));
-  font-size: var(--text-lg);
+  color: var(--habit-color);
+  font-size: var(--text-md);
   line-height: 1;
 }
 
@@ -160,16 +152,30 @@
 .rate {
   display: grid;
   gap: var(--space-1);
+  flex: 0 0 auto;
+  justify-items: end;
+  text-align: right;
 }
 
 .percentage {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.08em;
   color: var(--color-text);
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 8vw, 2.5rem);
+  font-size: clamp(1.35rem, 5vw, 1.75rem);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   letter-spacing: -0.04em;
   line-height: 1;
+}
+
+.percentageSymbol {
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.48em;
+  font-weight: 760;
+  letter-spacing: 0;
 }
 
 .counts {
@@ -182,11 +188,6 @@
 @media (min-width: 48rem) {
   .insights {
     gap: var(--space-8);
-  }
-
-  .habitCard {
-    align-content: space-between;
-    min-height: 10.5rem;
   }
 }
 

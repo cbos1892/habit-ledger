@@ -63,8 +63,11 @@ describe("HabitInsights", () => {
       "larger-rounded-tie",
     ]);
     expect(
-      within(screen.getByTestId("strongest-habits")).getAllByText("60%"),
+      within(screen.getByTestId("strongest-habits")).getAllByTestId(
+        "habit-rate",
+      ),
     ).toHaveLength(2);
+    expect(screen.getAllByTestId("habit-rate-symbol")).toHaveLength(4);
     expect(screen.getByText("3 of 5 scheduled opportunities")).toBeVisible();
   });
 

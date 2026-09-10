@@ -132,7 +132,15 @@ function HabitInsightCard({
       </div>
 
       <div className={styles.rate}>
-        <span className={styles.percentage}>{percentage}%</span>
+        <span className={styles.percentage} data-testid="habit-rate">
+          <span>{percentage}</span>
+          <span
+            className={styles.percentageSymbol}
+            data-testid="habit-rate-symbol"
+          >
+            %
+          </span>
+        </span>
         <span className={styles.counts}>
           {habit.completedCount} of {habit.opportunityCount} scheduled
           opportunities
