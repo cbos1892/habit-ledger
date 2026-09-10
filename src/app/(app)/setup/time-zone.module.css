@@ -460,7 +460,7 @@
 .habitIdentityGroup {
   display: grid;
   min-width: 0;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--space-3);
   align-items: center;
 }
@@ -485,6 +485,13 @@
   gap: var(--space-1);
 }
 
+.habitTitleRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .habitName {
   font-weight: 800;
   overflow-wrap: anywhere;
@@ -496,6 +503,7 @@
 }
 
 .habitColor {
+  flex: 0 0 auto;
   width: 1rem;
   height: 1rem;
   border-radius: var(--radius-pill);
@@ -580,14 +588,14 @@
   font-size: var(--text-sm);
 }
 
-@container (max-width: 48rem) {
+@container (max-width: 36rem) {
   .habitCard,
   .archivedHabitCard {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .habitControls {
-    justify-self: end;
+    justify-self: start;
   }
 
   .archivedContext {
@@ -615,8 +623,7 @@
     justify-content: flex-start;
   }
 
-  .routineNameFields,
-  .membershipForm {
+  .routineNameFields {
     grid-template-columns: 1fr;
   }
 
@@ -625,9 +632,17 @@
     width: 100%;
   }
 
+  .membershipForm {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .membershipForm label {
+    grid-column: 1 / -1;
+  }
+
   .habitControls {
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .primaryLink,

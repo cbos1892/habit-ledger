@@ -41,15 +41,17 @@ function HabitIdentity({ habit }: { habit: SetupHabit }) {
         {habit.icon}
       </span>
       <span className={styles.habitIdentity}>
-        <span className={styles.habitName}>{habit.name}</span>
+        <span className={styles.habitTitleRow}>
+          <span className={styles.habitName}>{habit.name}</span>
+          <span
+            aria-label={`${habit.color} color`}
+            className={styles.habitColor}
+            data-color={habit.color}
+            role="img"
+          />
+        </span>
         <span className={styles.habitMeta}>Starts {habit.startDate}</span>
       </span>
-      <span
-        aria-label={`${habit.color} color`}
-        className={styles.habitColor}
-        data-color={habit.color}
-        role="img"
-      />
     </div>
   );
 }
