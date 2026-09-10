@@ -40,79 +40,80 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* Coffeehouse light is the default paint before the preference script runs. */
+/* Coffeehouse light is the default paint before the preference script runs.
+ * These values are the shared form of the approved Today concept palette. */
 html[data-palette="coffeehouse"],
 html:not([data-palette]) {
   color-scheme: light;
-  --color-canvas: #f4f3ed;
-  --color-surface: #fffefa;
-  --color-surface-subtle: #ebeae3;
-  --color-surface-raised: #ffffff;
-  --color-text: #20231f;
-  --color-text-muted: #656b62;
-  --color-border: #d6d7ce;
-  --color-border-strong: #a8aba1;
-  --color-accent: #28745d;
-  --color-accent-hover: #165642;
-  --color-accent-soft: #dceee6;
-  --color-on-accent: #ffffff;
-  --color-focus: #a25f00;
-  --color-info: #245d82;
-  --color-info-soft: #e0eff8;
-  --color-success: #236348;
-  --color-success-soft: #dcefe5;
-  --color-warning: #795005;
-  --color-warning-soft: #f8e8c4;
-  --color-danger: #9a3f3a;
-  --color-danger-hover: #7f302c;
-  --color-danger-soft: #f7e2df;
-  --color-scrim: rgb(32 35 31 / 52%);
-  --color-nav-surface: rgb(255 254 250 / 92%);
-  --color-nav-surface-wide: rgb(238 237 230 / 82%);
-  --color-warm-glow: rgb(233 183 104 / 16%);
-  --habit-fern: #3f8064;
-  --habit-ocean: #39779a;
-  --habit-sun: #c57a27;
-  --habit-plum: #76558f;
-  --habit-rose: #a65b67;
+  --color-canvas: #f1eee7;
+  --color-surface: #faf7f0;
+  --color-surface-subtle: #e9e4db;
+  --color-surface-raised: #fffdf8;
+  --color-text: #30312e;
+  --color-text-muted: #706f68;
+  --color-border: #cec8bd;
+  --color-border-strong: #aaa499;
+  --color-accent: #6f5149;
+  --color-accent-hover: #593f39;
+  --color-accent-soft: #e4dad4;
+  --color-on-accent: #fffdf8;
+  --color-focus: #315f69;
+  --color-info: #3e6460;
+  --color-info-soft: #dce9e7;
+  --color-success: #5d7569;
+  --color-success-soft: #dde6df;
+  --color-warning: #8c604f;
+  --color-warning-soft: #f0dfd6;
+  --color-danger: #965b59;
+  --color-danger-hover: #784643;
+  --color-danger-soft: #f2dfdc;
+  --color-scrim: rgb(48 49 46 / 52%);
+  --color-nav-surface: rgb(250 247 240 / 92%);
+  --color-nav-surface-wide: rgb(232 227 217 / 82%);
+  --color-warm-glow: rgb(168 119 103 / 13%);
+  --habit-fern: #718076;
+  --habit-ocean: #3e6460;
+  --habit-sun: #a87767;
+  --habit-plum: #84727a;
+  --habit-rose: #92766e;
 }
 
 /* The resolved theme, rather than the saved preference, selects the palette. */
 html[data-palette="coffeehouse"][data-theme="dark"] {
   color-scheme: dark;
-  --color-canvas: #171a18;
-  --color-surface: #202421;
-  --color-surface-subtle: #2a2f2b;
-  --color-surface-raised: #272c28;
-  --color-text: #f1f1e9;
-  --color-text-muted: #b9bdb4;
-  --color-border: #424940;
-  --color-border-strong: #6c746a;
-  --color-accent: #79c5a8;
-  --color-accent-hover: #a2dec7;
-  --color-accent-soft: #244b3d;
-  --color-on-accent: #10271f;
-  --color-focus: #f2bb64;
-  --color-info: #91c7e7;
-  --color-info-soft: #203d4e;
-  --color-success: #8bd0ae;
-  --color-success-soft: #214536;
-  --color-warning: #f0c46f;
-  --color-warning-soft: #4b3b1d;
-  --color-danger: #efaaa4;
-  --color-danger-hover: #ffc3be;
-  --color-danger-soft: #512d2b;
-  --color-scrim: rgb(0 0 0 / 68%);
-  --color-nav-surface: rgb(32 36 33 / 92%);
-  --color-nav-surface-wide: rgb(26 30 27 / 88%);
-  --color-warm-glow: rgb(197 122 39 / 11%);
-  --shadow-sm: 0 0.25rem 1rem rgb(0 0 0 / 20%);
-  --shadow-lg: 0 1.4rem 4rem rgb(0 0 0 / 28%);
-  --habit-fern: #79b99a;
-  --habit-ocean: #77b3d3;
-  --habit-sun: #e6ab64;
-  --habit-plum: #b99bd0;
-  --habit-rose: #d9959f;
+  --color-canvas: #273337;
+  --color-surface: #344044;
+  --color-surface-subtle: #3b4749;
+  --color-surface-raised: #404c4e;
+  --color-text: #e7e2da;
+  --color-text-muted: #b2b4af;
+  --color-border: #536064;
+  --color-border-strong: #707b7d;
+  --color-accent: #b09aa4;
+  --color-accent-hover: #ebdfe2;
+  --color-accent-soft: #4d4850;
+  --color-on-accent: #273337;
+  --color-focus: #d4c4a8;
+  --color-info: #80a19e;
+  --color-info-soft: #3d5253;
+  --color-success: #91a096;
+  --color-success-soft: #465450;
+  --color-warning: #ad867b;
+  --color-warning-soft: #59494a;
+  --color-danger: #d9a49d;
+  --color-danger-hover: #f0c0b9;
+  --color-danger-soft: #5b4142;
+  --color-scrim: rgb(9 15 17 / 68%);
+  --color-nav-surface: rgb(52 64 68 / 92%);
+  --color-nav-surface-wide: rgb(34 45 49 / 88%);
+  --color-warm-glow: rgb(128 161 158 / 7%);
+  --shadow-sm: 0 0.25rem 1rem rgb(9 15 17 / 20%);
+  --shadow-lg: 0 1.4rem 4rem rgb(9 15 17 / 28%);
+  --habit-fern: #91a096;
+  --habit-ocean: #80a19e;
+  --habit-sun: #ad867b;
+  --habit-plum: #b09aa4;
+  --habit-rose: #a78f98;
 }
 
 /* Compatibility aliases while older feature CSS adopts semantic roles. */
