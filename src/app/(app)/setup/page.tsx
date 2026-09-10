@@ -1,21 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Card, Feedback } from "../../../components/ui";
+import { Feedback } from "../../../components/ui";
 import { requireCurrentUser } from "../../../lib/auth/current-user";
 import { getSetupViewModel } from "../../../lib/habits";
 import { getNavigationItem } from "../../../lib/navigation";
 
 import {
-  archiveHabit,
   createRoutine,
-  deleteRoutine,
   moveHabit,
   moveRoutine,
   moveRoutineHabit,
-  renameRoutine,
   restoreHabit,
-  setHabitRoutine,
 } from "./habit-actions";
 import { HabitList } from "./habit-list";
 import { RoutineNameForm } from "./routine-name-form";
@@ -113,6 +109,7 @@ export default async function SetupPage({
       ? [
           {
             display_order: section.routine.displayOrder,
+            icon: section.routine.icon,
             id: section.routine.id,
             name: section.routine.name,
           },
@@ -168,19 +165,22 @@ export default async function SetupPage({
             <h2 id="habits-title">Habits</h2>
             <p>Create a clear identity and choose when each habit appears.</p>
           </div>
+          <Link
+            aria-label="Add a standalone habit"
+            className={styles.plusControl}
+            href="/setup/habits/new"
+          >
+            <span aria-hidden="true">+</span>
+          </Link>
         </div>
 
         <HabitList
-          archiveAction={archiveHabit}
-          deleteRoutineAction={deleteRoutine}
           moveRoutineAction={moveRoutine}
           moveRoutineHabitAction={moveRoutineHabit}
           moveStandaloneHabitAction={moveHabit}
-          renameRoutineAction={renameRoutine}
           restoreAction={restoreHabit}
           routines={routines}
           sections={setup.sections}
-          setHabitRoutineAction={setHabitRoutine}
         />
       </section>
 
@@ -194,9 +194,7 @@ export default async function SetupPage({
             <p>Name a container now; add zero, one, or many habits later.</p>
           </div>
         </div>
-        <Card className={styles.card}>
-          <RoutineNameForm action={createRoutine} mode="create" />
-        </Card>
+        <RoutineNameForm action={createRoutine} mode="create" />
       </section>
 
       <Link className={styles.advancedSettingsLink} href="/settings/time-zone">

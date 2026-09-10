@@ -34,6 +34,7 @@ export function RoutineNameForm({
 
   return (
     <form action={formAction} className={styles.routineNameForm} noValidate>
+      <input name="icon" type="hidden" value="◌" />
       {state.status === "error" ? (
         <Feedback title="Routine not saved" tone="danger">
           <p>{state.message}</p>

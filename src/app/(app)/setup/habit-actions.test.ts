@@ -170,7 +170,10 @@ describe("habit form actions", () => {
     await expect(createRoutine({ status: "idle" }, data)).rejects.toThrow(
       "NEXT_REDIRECT",
     );
-    expect(rpc).toHaveBeenCalledWith("create_routine", { p_name: "Morning" });
+    expect(rpc).toHaveBeenCalledWith("create_routine", {
+      p_icon: "◌",
+      p_name: "Morning",
+    });
 
     vi.clearAllMocks();
     vi.mocked(requireCurrentUser).mockResolvedValue({ id: "user-123" });
@@ -179,6 +182,7 @@ describe("habit form actions", () => {
       renameRoutine("routine-123", { status: "idle" }, data),
     ).rejects.toThrow("NEXT_REDIRECT");
     expect(rpc).toHaveBeenCalledWith("rename_routine", {
+      p_icon: "◌",
       p_name: "Morning",
       p_routine_id: "routine-123",
     });
@@ -190,7 +194,7 @@ describe("habit form actions", () => {
     expect(await createRoutine({ status: "idle" }, empty)).toMatchObject({
       status: "error",
       errors: { name: expect.any(String) },
-      values: { name: "" },
+      values: { icon: "◌", name: "" },
     });
 
     vi.mocked(createServerSupabaseClient).mockResolvedValue({

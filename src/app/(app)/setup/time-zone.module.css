@@ -270,8 +270,7 @@
   gap: var(--space-4);
 }
 
-.subsectionHeading,
-.routineHabitHeading {
+.subsectionHeading {
   display: flex;
   align-items: end;
   justify-content: space-between;
@@ -280,7 +279,6 @@
 
 .subsectionHeading h3,
 .subsectionHeading p,
-.routineHabitHeading h4,
 .routineHeader h3,
 .routineHeader p,
 .emptyRoutine,
@@ -388,16 +386,6 @@
 
 .routineNameFields button {
   min-height: 2.75rem;
-}
-
-.routineHabitHeading {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-4);
-}
-
-.routineHabitHeading h4 {
-  font-size: var(--text-sm);
-  font-weight: 800;
 }
 
 .emptyRoutine {
@@ -549,8 +537,8 @@
 }
 
 .archivedHabits {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-4);
+  margin-block: var(--space-7);
+  padding: 0;
 }
 
 .archivedHabits summary {
@@ -586,6 +574,198 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+/* Setup management is intentionally a list, not a stack of editable cards. */
+.managementSection {
+  gap: var(--space-5);
+}
+
+.habitLists {
+  gap: clamp(var(--space-8), 7vw, var(--space-11));
+}
+
+.habitList {
+  gap: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.habitCard,
+.archivedHabitCard {
+  min-height: 4.5rem;
+  padding-block: var(--space-3);
+}
+
+.habitCard:hover {
+  background: color-mix(in srgb, var(--color-surface-subtle) 52%, transparent);
+}
+
+.habitIdentity {
+  gap: 0;
+}
+
+.habitControls,
+.routineControls {
+  gap: var(--space-2);
+}
+
+.iconControl {
+  display: inline-grid;
+  width: 2.25rem;
+  min-height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.iconControl:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-hover);
+}
+
+.iconControl:active {
+  transform: translateY(1px);
+}
+
+.iconControl:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.routineCard {
+  gap: var(--space-4);
+  border-left-width: 0.25rem;
+  padding-block: var(--space-4);
+}
+
+.routineTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.routineTitleRow .plusControl {
+  margin-left: var(--space-1);
+}
+
+.routineIcon {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-hover);
+  font-size: var(--text-xl);
+}
+
+.routineCreation {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-5);
+  padding-block: clamp(var(--space-7), 7vw, var(--space-10)) var(--space-3);
+}
+
+.routineCreation .routineNameForm {
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
+  border-top: 1px solid var(--color-border-strong);
+  border-bottom: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-surface-subtle) 55%, transparent);
+}
+
+.plusControl {
+  display: inline-grid;
+  width: 2.25rem;
+  min-height: 2.25rem;
+  place-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-accent-hover);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.plusControl:hover {
+  background: var(--color-accent-soft);
+}
+
+.plusControl:active {
+  transform: translateY(1px);
+}
+
+.plusControl:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.routineCreation .routineNameFields button {
+  min-height: 3rem;
+}
+
+.routineEditForm {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.dangerZone {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-6);
+}
+
+.dangerZone h2,
+.dangerZone p {
+  margin: 0;
+}
+.dangerZone h2 {
+  font-size: var(--text-base);
+}
+.dangerZone p {
+  max-width: 38rem;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.advancedSettingsLink {
+  margin-top: var(--space-2);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+@media (max-width: 46rem) {
+  .routineCreation {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+  .routineCreation .routineNameForm {
+    padding: var(--space-4);
+  }
+  .dangerZone {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 @container (max-width: 36rem) {

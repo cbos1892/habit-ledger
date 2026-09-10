@@ -5,7 +5,7 @@ import { Card } from "@/components/ui";
 import { getActiveHabit, getRoutines } from "@/lib/habits";
 import { requireTimeZoneContext } from "@/lib/profile";
 
-import { updateHabit } from "../../../habit-actions";
+import { archiveHabit, updateHabit } from "../../../habit-actions";
 import { HabitForm } from "../../../habit-form";
 import styles from "../../../time-zone.module.css";
 
@@ -44,6 +44,8 @@ export default async function EditHabitPage({
       <Card className={styles.card}>
         <HabitForm
           action={updateHabit.bind(null, habit.id)}
+          archiveAction={archiveHabit}
+          habitId={habit.id}
           initialValues={{
             name: habit.name,
             icon: habit.icon,

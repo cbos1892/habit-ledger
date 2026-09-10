@@ -207,6 +207,30 @@
   outline-offset: 2px;
 }
 
+.dangerZone {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-6);
+}
+
+.dangerZone h2,
+.dangerZone p {
+  margin: 0;
+}
+
+.dangerZone h2 {
+  font-size: var(--text-base);
+}
+
+.dangerZone p {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 @media (max-width: 38rem) {
   .identityFields,
   .colorOptions {
@@ -227,6 +251,11 @@
   }
 
   .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dangerZone {
     align-items: stretch;
     flex-direction: column;
   }

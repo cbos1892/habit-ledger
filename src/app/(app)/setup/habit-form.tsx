@@ -22,6 +22,8 @@ type HabitFormProps = {
     state: HabitFormState,
     formData: FormData,
   ) => Promise<HabitFormState>;
+  archiveAction?: (formData: FormData) => Promise<void>;
+  habitId?: string;
   initialValues: HabitFormValues;
   mode: "create" | "edit";
   routines: readonly Routine[];
@@ -47,6 +49,8 @@ const weekdayLabels: Record<IsoWeekday, string> = {
 
 export function HabitForm({
   action,
+  archiveAction,
+  habitId,
   initialValues,
   mode,
   routines,
@@ -68,162 +72,196 @@ export function HabitForm({
   }
 
   return (
-    <form action={formAction} className={styles.form} noValidate>
-      {state.status === "error" ? (
-        <Feedback title="Habit not saved" tone="danger">
-          <p>{state.message}</p>
-        </Feedback>
-      ) : null}
-
-      <div className={styles.identityFields}>
-        <TextField
-          autoComplete="off"
-          defaultValue={values.icon}
-          description="Choose one to three emojis. Combined emojis count as one."
-          disabled={pending}
-          error={errors.icon}
-          id="habit-icon"
-          label="Emojis"
-          maxLength={HABIT_ICON_MAX_LENGTH}
-          name="icon"
-          placeholder="🌿✨"
-          required
-        />
-        <TextField
-          autoComplete="off"
-          defaultValue={values.name}
-          description="Use a short name that feels natural in Today and Week."
-          disabled={pending}
-          error={errors.name}
-          id="habit-name"
-          label="Habit name"
-          maxLength={100}
-          name="name"
-          placeholder="Morning walk"
-          required
-        />
-      </div>
-
-      <SelectField
-        defaultValue={values.routineId}
-        description="Choose a routine, or keep this habit in the standalone list."
-        disabled={pending}
-        error={errors.routineId}
-        id="habit-routine"
-        label="Routine"
-        name="routineId"
-        optional
-      >
-        <option value="">Standalone</option>
-        {routines.map((routine) => (
-          <option key={routine.id} value={routine.id}>
-            {routine.name}
-          </option>
-        ))}
-      </SelectField>
-
-      <fieldset
-        aria-describedby={errors.color ? "habit-color-error" : undefined}
-        className={styles.colorField}
-        disabled={pending}
-      >
-        <legend>Color</legend>
-        <div className={styles.colorOptions}>
-          {HABIT_COLORS.map((color) => (
-            <label className={styles.colorOption} key={color}>
-              <input
-                defaultChecked={values.color === color}
-                name="color"
-                required
-                type="radio"
-                value={color}
-              />
-              <span
-                aria-hidden="true"
-                className={styles.colorSwatch}
-                data-color={color}
-              />
-              <span>{colorLabels[color]}</span>
-            </label>
-          ))}
-        </div>
-        {errors.color ? (
-          <p className={styles.error} id="habit-color-error">
-            {errors.color}
-          </p>
+    <>
+      <form action={formAction} className={styles.form} noValidate>
+        {state.status === "error" ? (
+          <Feedback title="Habit not saved" tone="danger">
+            <p>{state.message}</p>
+          </Feedback>
         ) : null}
-      </fieldset>
 
-      <TextField
-        defaultValue={values.startDate}
-        description="The habit becomes available on this local calendar date."
-        disabled={pending}
-        error={errors.startDate}
-        id="habit-start-date"
-        label="Start date"
-        name="startDate"
-        required
-        type="date"
-      />
-
-      <fieldset
-        aria-describedby={errors.weekdays ? "habit-weekdays-error" : undefined}
-        className={styles.scheduleField}
-        disabled={pending}
-      >
-        <legend>Schedule</legend>
-        <p className={styles.scheduleDescription}>
-          Choose every day or the weekdays when this habit should appear.
-        </p>
-        <label className={styles.everyDayOption}>
-          <input
-            checked={isEveryDay}
-            onChange={(event) =>
-              setWeekdays(event.target.checked ? [...ISO_WEEKDAYS] : [])
-            }
-            type="checkbox"
+        <div className={styles.identityFields}>
+          <TextField
+            autoComplete="off"
+            defaultValue={values.icon}
+            description="Choose one to three emojis. Combined emojis count as one."
+            disabled={pending}
+            error={errors.icon}
+            id="habit-icon"
+            label="Emojis"
+            maxLength={HABIT_ICON_MAX_LENGTH}
+            name="icon"
+            placeholder="🌿✨"
+            required
           />
-          <span>Every day</span>
-        </label>
-        <div className={styles.weekdayOptions}>
-          {ISO_WEEKDAYS.map((weekday) => (
-            <label className={styles.weekdayOption} key={weekday}>
-              <input
-                aria-label={weekdayLabels[weekday]}
-                checked={weekdays.includes(weekday)}
-                name="weekdays"
-                onChange={(event) =>
-                  toggleWeekday(weekday, event.target.checked)
-                }
-                type="checkbox"
-                value={weekday}
-              />
-              <span aria-hidden="true">
-                {weekdayLabels[weekday].slice(0, 3)}
-              </span>
-              <span className={styles.srOnly}>{weekdayLabels[weekday]}</span>
-            </label>
-          ))}
+          <TextField
+            autoComplete="off"
+            defaultValue={values.name}
+            description="Use a short name that feels natural in Today and Week."
+            disabled={pending}
+            error={errors.name}
+            id="habit-name"
+            label="Habit name"
+            maxLength={100}
+            name="name"
+            placeholder="Morning walk"
+            required
+          />
         </div>
-        {errors.weekdays ? (
-          <p className={styles.error} id="habit-weekdays-error">
-            {errors.weekdays}
-          </p>
-        ) : null}
-      </fieldset>
 
-      <div className={styles.actions}>
-        <Button disabled={pending} type="submit">
-          {pending
-            ? "Saving…"
-            : mode === "create"
-              ? "Create habit"
-              : "Save changes"}
-        </Button>
-        <Link className={styles.cancelLink} href="/setup">
-          Cancel
-        </Link>
-      </div>
-    </form>
+        <SelectField
+          defaultValue={values.routineId}
+          description="Choose a routine, or keep this habit in the standalone list."
+          disabled={pending}
+          error={errors.routineId}
+          id="habit-routine"
+          label="Routine"
+          name="routineId"
+          optional
+        >
+          <option value="">Standalone</option>
+          {routines.map((routine) => (
+            <option key={routine.id} value={routine.id}>
+              {routine.name}
+            </option>
+          ))}
+        </SelectField>
+
+        <fieldset
+          aria-describedby={errors.color ? "habit-color-error" : undefined}
+          className={styles.colorField}
+          disabled={pending}
+        >
+          <legend>Color</legend>
+          <div className={styles.colorOptions}>
+            {HABIT_COLORS.map((color) => (
+              <label className={styles.colorOption} key={color}>
+                <input
+                  defaultChecked={values.color === color}
+                  name="color"
+                  required
+                  type="radio"
+                  value={color}
+                />
+                <span
+                  aria-hidden="true"
+                  className={styles.colorSwatch}
+                  data-color={color}
+                />
+                <span>{colorLabels[color]}</span>
+              </label>
+            ))}
+          </div>
+          {errors.color ? (
+            <p className={styles.error} id="habit-color-error">
+              {errors.color}
+            </p>
+          ) : null}
+        </fieldset>
+
+        <TextField
+          defaultValue={values.startDate}
+          description="The habit becomes available on this local calendar date."
+          disabled={pending}
+          error={errors.startDate}
+          id="habit-start-date"
+          label="Start date"
+          name="startDate"
+          required
+          type="date"
+        />
+
+        <fieldset
+          aria-describedby={
+            errors.weekdays ? "habit-weekdays-error" : undefined
+          }
+          className={styles.scheduleField}
+          disabled={pending}
+        >
+          <legend>Schedule</legend>
+          <p className={styles.scheduleDescription}>
+            Choose every day or the weekdays when this habit should appear.
+          </p>
+          <label className={styles.everyDayOption}>
+            <input
+              checked={isEveryDay}
+              onChange={(event) =>
+                setWeekdays(event.target.checked ? [...ISO_WEEKDAYS] : [])
+              }
+              type="checkbox"
+            />
+            <span>Every day</span>
+          </label>
+          <div className={styles.weekdayOptions}>
+            {ISO_WEEKDAYS.map((weekday) => (
+              <label className={styles.weekdayOption} key={weekday}>
+                <input
+                  aria-label={weekdayLabels[weekday]}
+                  checked={weekdays.includes(weekday)}
+                  name="weekdays"
+                  onChange={(event) =>
+                    toggleWeekday(weekday, event.target.checked)
+                  }
+                  type="checkbox"
+                  value={weekday}
+                />
+                <span aria-hidden="true">
+                  {weekdayLabels[weekday].slice(0, 3)}
+                </span>
+                <span className={styles.srOnly}>{weekdayLabels[weekday]}</span>
+              </label>
+            ))}
+          </div>
+          {errors.weekdays ? (
+            <p className={styles.error} id="habit-weekdays-error">
+              {errors.weekdays}
+            </p>
+          ) : null}
+        </fieldset>
+
+        <div className={styles.actions}>
+          <Button disabled={pending} type="submit">
+            {pending
+              ? "Saving…"
+              : mode === "create"
+                ? "Create habit"
+                : "Save changes"}
+          </Button>
+          <Link className={styles.cancelLink} href="/setup">
+            Cancel
+          </Link>
+        </div>
+      </form>
+      {archiveAction && habitId ? (
+        <section
+          aria-labelledby="habit-danger-title"
+          className={styles.dangerZone}
+        >
+          <div>
+            <h2 id="habit-danger-title">Archive habit</h2>
+            <p>
+              It leaves active views, while its completion history stays safe.
+            </p>
+          </div>
+          <form
+            action={archiveAction}
+            onSubmit={(event) => {
+              if (
+                !window.confirm(
+                  `Archive ${values.name}? Its completion history will be kept.`,
+                )
+              ) {
+                event.preventDefault();
+              }
+            }}
+          >
+            <input name="habitId" type="hidden" value={habitId} />
+            <Button type="submit" variant="danger">
+              Archive habit
+            </Button>
+          </form>
+        </section>
+      ) : null}
+    </>
   );
 }

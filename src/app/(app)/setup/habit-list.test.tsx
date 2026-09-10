@@ -109,13 +109,12 @@ describe("HabitList", () => {
 
     const headings = screen.getAllByRole("heading", { level: 3 });
     expect(headings.map(({ textContent }) => textContent)).toEqual([
-      "Standalone",
       "Morning reset",
       "Evening reset",
     ]);
     expect(screen.getByText("No active habits here yet.")).toBeVisible();
     expect(
-      screen.getAllByRole("link", { name: "New habit here" })[0],
+      screen.getAllByRole("link", { name: "Add a habit to Morning reset" })[0],
     ).toHaveAttribute("href", `/setup/habits/new?routineId=${routines[0].id}`);
   });
 
@@ -134,31 +133,31 @@ describe("HabitList", () => {
     ).toBeDisabled();
   });
 
-  it("moves habits between standalone and named routines", () => {
+  it("keeps membership changes behind the habit edit screen", () => {
     renderList();
 
     const morningWalkItem = screen.getByText("Morning walk").closest("li");
     expect(morningWalkItem).not.toBeNull();
     expect(
-      within(morningWalkItem as HTMLElement).getByRole("combobox"),
-    ).toHaveValue("");
-    const readItem = screen.getByText("Read").closest("li");
-    expect(readItem).not.toBeNull();
-    expect(within(readItem as HTMLElement).getByRole("combobox")).toHaveValue(
-      routines[0].id,
+      within(morningWalkItem as HTMLElement).getByRole("link", {
+        name: "Edit Morning walk",
+      }),
+    ).toHaveAttribute(
+      "href",
+      `/setup/habits/${sections[0].activeHabits[0].id}/edit`,
     );
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
-  it("requires an explicit history-preserving confirmation before deletion", () => {
-    const { deleteRoutineAction } = renderList();
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("keeps routine deletion behind the routine edit screen", () => {
+    renderList();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[0]);
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      "Delete Morning reset? Its habits will become standalone. Their schedules and history will be kept.",
-    );
-    expect(deleteRoutineAction).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: /Delete/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Edit Morning reset routine" }),
+    ).toHaveAttribute("href", `/setup/routines/${routines[0].id}/edit`);
   });
 
   it("keeps archived habits out of active routine lists and restores them in context", () => {
@@ -166,6 +165,9 @@ describe("HabitList", () => {
 
     const archived = screen.getByText("Archived habits").closest("details");
     expect(archived).not.toBeNull();
+    fireEvent.click(
+      within(archived as HTMLElement).getByText("Archived habits"),
+    );
     expect(within(archived as HTMLElement).getByText("Meditate")).toBeVisible();
     expect(
       within(archived as HTMLElement).getByText("Morning reset routine"),

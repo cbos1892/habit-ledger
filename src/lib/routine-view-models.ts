@@ -4,6 +4,7 @@ import { toLocalDateKey, type WeekStartsOn } from "@/lib/time-zone";
 /** Database-shaped routine data required by the pure view-model builders. */
 export type RoutineRecord = Readonly<{
   display_order: number;
+  icon?: string;
   id: string;
   name: string;
 }>;
@@ -33,6 +34,7 @@ export type RoutineHabitRecord = Readonly<{
 
 export type RoutineSummary = Readonly<{
   displayOrder: number;
+  icon?: string;
   id: string;
   name: string;
 }>;
@@ -169,6 +171,7 @@ function compareRoutines(left: RoutineRecord, right: RoutineRecord): number {
 function toRoutineSummary(routine: RoutineRecord): RoutineSummary {
   return Object.freeze({
     displayOrder: routine.display_order,
+    icon: routine.icon ?? "◌",
     id: routine.id,
     name: routine.name,
   });

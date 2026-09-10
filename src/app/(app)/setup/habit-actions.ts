@@ -226,6 +226,7 @@ export async function createRoutine(
   try {
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.rpc("create_routine", {
+      p_icon: validation.data.icon,
       p_name: validation.data.name,
     });
     if (error) throw error;
@@ -253,6 +254,7 @@ export async function renameRoutine(
   try {
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.rpc("rename_routine", {
+      p_icon: validation.data.icon,
       p_name: validation.data.name,
       p_routine_id: routineId,
     });

@@ -112,8 +112,8 @@ export type Database = {
           color?: string;
           created_at?: string;
           display_order?: number;
-          icon?: string;
           id?: string;
+          icon?: string;
           name?: string;
           owner_id?: string;
           routine_display_order?: number | null;
@@ -172,6 +172,7 @@ export type Database = {
         Row: {
           created_at: string;
           display_order: number;
+          icon: string;
           id: string;
           name: string;
           owner_id: string;
@@ -181,6 +182,7 @@ export type Database = {
           created_at?: string;
           display_order: number;
           id?: string;
+          icon?: string;
           name: string;
           owner_id: string;
           updated_at?: string;
@@ -189,6 +191,7 @@ export type Database = {
           created_at?: string;
           display_order?: number;
           id?: string;
+          icon?: string;
           name?: string;
           owner_id?: string;
           updated_at?: string;
@@ -234,7 +237,10 @@ export type Database = {
         };
         Returns: string;
       };
-      create_routine: { Args: { p_name: string }; Returns: string };
+      create_routine: {
+        Args: { p_icon: string; p_name: string };
+        Returns: string;
+      };
       delete_routine: { Args: { p_routine_id: string }; Returns: string };
       move_habit: {
         Args: { p_direction: string; p_habit_id: string };
@@ -253,7 +259,7 @@ export type Database = {
         Returns: string;
       };
       rename_routine: {
-        Args: { p_name: string; p_routine_id: string };
+        Args: { p_icon: string; p_name: string; p_routine_id: string };
         Returns: string;
       };
       restore_habit: { Args: { p_habit_id: string }; Returns: string };
