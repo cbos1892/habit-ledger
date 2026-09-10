@@ -78,7 +78,12 @@ describe("Setup routine view model", () => {
           expect.objectContaining({ id: "routine-archived", weekdays: [2] }),
         ],
         kind: "routine",
-        routine: { displayOrder: 0, id: "routine-a", name: "Morning" },
+        routine: {
+          displayOrder: 0,
+          icon: "◌",
+          id: "routine-a",
+          name: "Morning",
+        },
       },
     ]);
     expect(routineOwnerEq).toHaveBeenCalledWith("owner_id", "owner-123");

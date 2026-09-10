@@ -23,7 +23,12 @@ export type Habit = Pick<
   weekdays: IsoWeekday[];
 };
 
-export type Routine = Pick<Tables<"routines">, "display_order" | "id" | "name">;
+export type Routine = Pick<
+  Tables<"routines">,
+  "display_order" | "id" | "name"
+> & {
+  icon?: string;
+};
 
 const habitSelection =
   "id, name, icon, color, start_date, display_order, archived_at, routine_id, routine_display_order, habit_schedules(weekday)" as const;
@@ -60,7 +65,7 @@ export async function getSetupViewModel(
   const [routineResult, habitResult] = await Promise.all([
     supabase
       .from("routines")
-      .select("id, name, display_order")
+      .select("id, name, icon, display_order")
       .eq("owner_id", ownerId)
       .order("display_order")
       .order("id"),
@@ -91,7 +96,7 @@ export async function getRoutines(ownerId: string): Promise<Routine[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("routines")
-    .select("id, name, display_order")
+    .select("id, name, icon, display_order")
     .eq("owner_id", ownerId)
     .order("display_order")
     .order("id");
@@ -99,6 +104,22 @@ export async function getRoutines(ownerId: string): Promise<Routine[]> {
   if (error) throw new Error("Unable to load routines.");
 
   return data ?? [];
+}
+
+export async function getRoutine(
+  ownerId: string,
+  routineId: string,
+): Promise<Routine | null> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("routines")
+    .select("id, name, icon, display_order")
+    .eq("id", routineId)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  if (error) throw new Error("Unable to load this routine.");
+  return data;
 }
 
 export async function getActiveHabits(ownerId: string): Promise<Habit[]> {

@@ -12,8 +12,8 @@ describe("validateRoutineForm", () => {
   it("trims and accepts a routine name", () => {
     expect(validateRoutineForm(routineFormData("  Morning reset  "))).toEqual({
       success: true,
-      data: { name: "Morning reset" },
-      values: { name: "Morning reset" },
+      data: { icon: "◌", name: "Morning reset" },
+      values: { icon: "◌", name: "Morning reset" },
     });
   });
 

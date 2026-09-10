@@ -96,6 +96,7 @@ describe("routine view-model builders", () => {
             id: "routine-morning",
             name: "Morning start",
             displayOrder: 10,
+            icon: "◌",
           },
           activeHabits: [
             expect.objectContaining({
@@ -115,6 +116,7 @@ describe("routine view-model builders", () => {
             id: "routine-evening",
             name: "Evening reset",
             displayOrder: 20,
+            icon: "◌",
           },
           activeHabits: [],
           archivedHabits: [],
