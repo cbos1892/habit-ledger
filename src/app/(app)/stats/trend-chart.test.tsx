@@ -73,6 +73,8 @@ describe("TrendChart", () => {
     );
     expect(within(chart).getByText("100%")).toBeInTheDocument();
     expect(within(chart).getByText("0%")).toBeInTheDocument();
+    expect(within(chart).getAllByText("Rate")).toHaveLength(8);
+    expect(screen.getByLabelText("Chart key")).toBeInTheDocument();
     expect(
       container.querySelector('[data-trend-chart="eight-week"]'),
     ).toBeInTheDocument();

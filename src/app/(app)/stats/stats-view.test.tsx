@@ -42,6 +42,8 @@ describe("Stats view", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Jul 28 – Aug 10, 2026")).toBeInTheDocument();
+    expect(screen.getByText("Reflection window")).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
   });
 
   it("renders distinct no-habit and no-opportunity states without a zero percent", () => {

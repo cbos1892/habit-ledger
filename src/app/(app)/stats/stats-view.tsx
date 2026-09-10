@@ -114,11 +114,17 @@ function CompletionSummary({ statistics }: Pick<StatsViewProps, "statistics">) {
       </div>
 
       <div className={styles.summaryDetails} aria-hidden="true">
-        <p>
-          <strong>{overall.completedCount}</strong> of{" "}
-          {overall.opportunityCount} opportunities completed
+        <p className={styles.summaryCount}>
+          <span>Completed</span>
+          <strong>
+            {overall.completedCount} <em>of</em> {overall.opportunityCount}
+          </strong>
+          <span>scheduled opportunities</span>
         </p>
-        <p>{visibleWindow}</p>
+        <p className={styles.summaryWindow}>
+          <span>Reflection window</span>
+          <strong>{visibleWindow}</strong>
+        </p>
       </div>
       <p className={styles.srOnly} id="stats-summary-equivalent">
         {overall.completedCount} of {overall.opportunityCount} scheduled habit
