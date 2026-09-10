@@ -516,11 +516,6 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
             )}
           </nav>
         </div>
-        {optimisticWeek.status === "ready" ? (
-          <p className={styles.summary}>
-            {rows.length} {rows.length === 1 ? "habit" : "habits"}
-          </p>
-        ) : null}
       </header>
 
       {notice ? (
@@ -539,9 +534,7 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
 
       {optimisticWeek.status === "empty" ? (
         <section className={styles.empty} aria-labelledby="empty-week-title">
-          <span className={styles.emptyIcon} aria-hidden="true">
-            🗓️
-          </span>
+          <span className={styles.emptyMarker} aria-hidden="true" />
           <p className={styles.emptyEyebrow}>A clear week</p>
           <h2 className={styles.emptyTitle} id="empty-week-title">
             No habits are scheduled this week.
