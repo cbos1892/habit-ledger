@@ -45,11 +45,13 @@ Under **Authentication → URL Configuration**, confirm:
 
 ```text
 Site URL
-https://habitledger.vercel.app
+https://habitledger.curtisbos.com
 
 Redirect URLs
 http://localhost:3000/auth/callback
 http://127.0.0.1:3000/auth/callback
+https://habitledger.curtisbos.com/auth/callback
+https://habitledger.curtisbos.com/auth/callback?next=/today
 https://habitledger.vercel.app/auth/callback
 https://habit-ledger-*-curtis-s-team.vercel.app/**
 ```
@@ -62,7 +64,7 @@ the callback path and query parameters supplied by the application's
 
 ## 3. Verify the deployed flow
 
-1. Open `https://habitledger.vercel.app/sign-in` in a private browser window.
+1. Open `https://habitledger.curtisbos.com/sign-in` in a private browser window.
 2. Choose **Continue with Google** and complete consent with a new account.
 3. Confirm the browser lands on `/today` or the profile setup flow.
 4. Sign out and repeat with an email address that previously used a magic link.

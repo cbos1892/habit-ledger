@@ -10,7 +10,7 @@ Habit Ledger is a private, mobile-friendly habit tracker. See [PRD.md](./PRD.md)
 - Supabase project reference: `jlxfxysadkbzcfpdjttq`
 - Supabase region: West US (Oregon)
 - Vercel project: `curtis-s-team/habit-ledger`
-- Production URL: [habitledger.vercel.app](https://habitledger.vercel.app/)
+- Production URL: [habitledger.curtisbos.com](https://habitledger.curtisbos.com/)
 
 The checked-in Supabase migrations include user-owned profiles, habits, weekday schedules, and one daily completion per habit and local calendar date. All application tables enforce ownership with row-level security.
 
@@ -162,7 +162,7 @@ Application code lives under `src/`. Routes are defined in `src/app/`; reusable 
 
 ## Vercel deployment workflow
 
-Vercel is connected to the GitHub repository and uses `main` as the production branch. Every other pushed branch or pull request receives a protected preview deployment. A push to `main` creates a production deployment and updates [habitledger.vercel.app](https://habitledger.vercel.app/) after a successful build.
+Vercel is connected to the GitHub repository and uses `main` as the production branch. Every other pushed branch or pull request receives a protected preview deployment. A push to `main` creates a production deployment and updates [habitledger.curtisbos.com](https://habitledger.curtisbos.com/) after a successful build.
 
 The standard `build` script makes every Vercel deployment run the complete quality suite before the production build:
 
@@ -177,8 +177,8 @@ The quality suite includes linting, generated route types and TypeScript checks,
 After a preview or production deployment, verify both the application and its uncached health endpoint:
 
 ```sh
-curl --fail --show-error --silent https://habitledger.vercel.app/ > /dev/null
-curl --fail --show-error --silent https://habitledger.vercel.app/api/health
+curl --fail --show-error --silent https://habitledger.curtisbos.com/ > /dev/null
+curl --fail --show-error --silent https://habitledger.curtisbos.com/api/health
 ```
 
 The health endpoint should return HTTP 200 with `{"status":"ok"}`. Protected preview deployments can be checked through the authenticated CLI:
@@ -205,4 +205,4 @@ After diagnosing the regression, fix it through the normal branch and pull-reque
 
 ## Deployment status
 
-GitHub, Supabase, and Vercel are connected. Preview and production deployments are operational, and the production application is available at [habitledger.vercel.app](https://habitledger.vercel.app/).
+GitHub, Supabase, and Vercel are connected. Preview and production deployments are operational, and the production application is available at [habitledger.curtisbos.com](https://habitledger.curtisbos.com/).
