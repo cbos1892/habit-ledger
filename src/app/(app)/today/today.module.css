@@ -337,6 +337,14 @@
   border-color: var(--routine-tone);
   background: var(--routine-tone);
 }
+.habitCopy {
+  display: grid;
+  min-width: 0;
+}
+.habitWeeklyProgress {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
 .habitName {
   overflow: hidden;
   font-size: var(--text-base);

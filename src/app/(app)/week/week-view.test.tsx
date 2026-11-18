@@ -95,6 +95,51 @@ describe("Week view", () => {
     vi.mocked(setHabitCompletion).mockReset();
   });
 
+  it("shows the weekly target and updates later required days after a backdated check-in", async () => {
+    const row = {
+      ...weekRow,
+      weeklyTarget: { target: 3, eligibleDates: week.localDates },
+      cells: week.localDates.map((localDate) => ({
+        completionId: null,
+        localDate,
+        state: "incomplete" as const,
+      })),
+    };
+    const model: WeeklyViewModel = {
+      ...week,
+      currentLocalDate: "2026-08-14",
+      sections: [{ kind: "standalone", rows: [row] }],
+    };
+    vi.mocked(setHabitCompletion).mockResolvedValue({
+      status: "success",
+      habitId: row.id,
+      completed: true,
+      completionId: "done-1",
+      localDate: "2026-08-13",
+    });
+    render(<WeekView week={model} />);
+
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuemax",
+      "3",
+    );
+    expect(
+      screen.getByRole("button", { name: /August 14.*incomplete$/ }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /August 13.*optional$/ }),
+    );
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "1",
+    );
+    expect(
+      screen.getByRole("button", { name: /August 14.*optional$/ }),
+    ).toBeInTheDocument();
+    await act(async () => {});
+  });
+
   it("renders a semantic seven-day grid with emoji-only visual identity", () => {
     const { container } = render(<WeekView week={week} />);
 

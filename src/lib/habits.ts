@@ -18,6 +18,7 @@ export type Habit = Pick<
   | "display_order"
   | "archived_at"
 > & {
+  weekly_target?: number | null;
   routine_id?: string | null;
   routine_display_order?: number | null;
   weekdays: IsoWeekday[];
@@ -31,7 +32,7 @@ export type Routine = Pick<
 };
 
 const habitSelection =
-  "id, name, icon, color, start_date, display_order, archived_at, routine_id, routine_display_order, habit_schedules(weekday)" as const;
+  "id, name, icon, color, start_date, display_order, archived_at, routine_id, routine_display_order, weekly_target, habit_schedules(weekday)" as const;
 
 function withWeekdays(
   habit: Pick<
@@ -45,6 +46,7 @@ function withWeekdays(
     | "archived_at"
     | "routine_id"
     | "routine_display_order"
+    | "weekly_target"
   > & { habit_schedules: { weekday: number }[] },
 ): Habit {
   const { habit_schedules, ...identity } = habit;

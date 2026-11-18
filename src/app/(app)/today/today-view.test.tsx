@@ -155,6 +155,50 @@ describe("Today view", () => {
     );
   });
 
+  it("shows a perfect day when only optional check-ins are available", async () => {
+    const habit = {
+      ...readyHabit,
+      weeklyTarget: { target: 3, completedBefore: 1, requiredToday: false },
+    };
+    const progress = { completedCount: 0, totalCount: 0 };
+    let rejectCheckIn: (
+      result: Awaited<ReturnType<typeof setHabitCompletion>>,
+    ) => void = () => {};
+    vi.mocked(setHabitCompletion).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          rejectCheckIn = resolve;
+        }),
+    );
+    render(
+      <TodayView
+        today={{
+          ...readyToday,
+          ...progress,
+          progress,
+          sections: [{ ...readyToday.sections[0], progress, habits: [habit] }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("No habits are required today.")).toBeVisible();
+    expect(screen.getByText("Perfect day")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: /1 of 3 this week · Optional today/ }),
+    );
+    expect(
+      screen.getByRole("button", { name: /2 of 3 this week · Optional today/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("progressbar")).toBeNull();
+
+    await act(async () => {
+      rejectCheckIn({ status: "error", message: "Check-in failed." });
+    });
+    expect(
+      screen.getByRole("button", { name: /1 of 3 this week · Optional today/ }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("groups progress and the habits heading in one sticky stack", () => {
     render(<TodayView today={readyToday} />);
 

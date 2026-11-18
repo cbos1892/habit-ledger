@@ -119,6 +119,38 @@ describe("HabitForm", () => {
     expect(screen.getByLabelText("Monday")).toBeChecked();
   });
 
+  it("edits a saved weekly target and can switch back to weekdays", async () => {
+    const user = userEvent.setup();
+    render(
+      <HabitForm
+        action={action}
+        initialValues={{
+          name: "Workout",
+          icon: "🏋️",
+          color: "fern",
+          routineId: "",
+          startDate: "2026-08-10",
+          weekdays: [1, 2, 3, 4, 5, 6, 7],
+          weeklyTarget: "5",
+        }}
+        mode="edit"
+        routines={[]}
+      />,
+    );
+
+    const schedule = screen.getByRole("combobox", { name: "Schedule type" });
+    const target = screen.getByRole("combobox", { name: "Times per week" });
+    expect(schedule).toHaveValue("weekly");
+    expect(target).toHaveValue("5");
+    await user.selectOptions(target, "3");
+    await user.selectOptions(schedule, "weekdays");
+    expect(screen.getByLabelText("Every day")).toBeChecked();
+    await user.selectOptions(schedule, "weekly");
+    expect(
+      screen.getByRole("combobox", { name: "Times per week" }),
+    ).toHaveValue("3");
+  });
+
   it("supports keyboard schedule editing", async () => {
     const user = userEvent.setup();
     render(

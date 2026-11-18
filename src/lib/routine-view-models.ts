@@ -1,5 +1,14 @@
-import { isHabitScheduledOnDate, type IsoWeekday } from "@/lib/habit-schedule";
-import { toLocalDateKey, type WeekStartsOn } from "@/lib/time-zone";
+import {
+  isHabitScheduledOnDate,
+  isWeeklyTargetRequired,
+  type IsoWeekday,
+} from "@/lib/habit-schedule";
+import {
+  DEFAULT_WEEK_START,
+  getLocalWeekDateKeysFromDate,
+  toLocalDateKey,
+  type WeekStartsOn,
+} from "@/lib/time-zone";
 
 /** Database-shaped routine data required by the pure view-model builders. */
 export type RoutineRecord = Readonly<{
@@ -30,6 +39,7 @@ export type RoutineHabitRecord = Readonly<{
   routine_id: string | null;
   start_date: string;
   weekdays: readonly IsoWeekday[];
+  weekly_target?: number | null;
 }>;
 
 export type RoutineSummary = Readonly<{
@@ -53,6 +63,7 @@ export type SetupHabit = Readonly<
     archivedAt: string | null;
     startDate: string;
     weekdays: readonly IsoWeekday[];
+    weeklyTarget?: number;
   }
 >;
 
@@ -78,6 +89,11 @@ export type TodayHabit = Readonly<
   RoutineHabit & {
     completed: boolean;
     completionId: string | null;
+    weeklyTarget?: Readonly<{
+      completedBefore: number;
+      requiredToday: boolean;
+      target: number;
+    }>;
   }
 >;
 
@@ -120,6 +136,10 @@ export type WeeklyHabitCell = Readonly<{
 export type WeeklyHabitRow = Readonly<
   RoutineHabit & {
     cells: readonly WeeklyHabitCell[];
+    weeklyTarget?: Readonly<{
+      eligibleDates: readonly string[];
+      target: number;
+    }>;
   }
 >;
 
@@ -194,6 +214,9 @@ function toSetupHabit(habit: RoutineHabitRecord): SetupHabit {
     archivedAt: habit.archived_at,
     startDate: habit.start_date,
     weekdays: Object.freeze([...habit.weekdays]),
+    ...(habit.weekly_target != null
+      ? { weeklyTarget: habit.weekly_target }
+      : {}),
   });
 }
 
@@ -287,22 +310,50 @@ export function buildSetupRoutineViewModel(
 function toTodayHabit(
   habit: RoutineHabitRecord,
   localDate: string,
+  weekDates: readonly string[],
 ): TodayHabit {
   const completion = habit.completions.find(
     ({ local_date }) => local_date === localDate,
   );
 
+  let weeklyTarget: TodayHabit["weeklyTarget"];
+  if (habit.weekly_target != null) {
+    const eligibleDates = weekDates.filter((date) => date >= habit.start_date);
+    const target = Math.min(habit.weekly_target, eligibleDates.length);
+    const completedBefore = habit.completions.filter(
+      ({ local_date }) =>
+        local_date < localDate && eligibleDates.includes(local_date),
+    ).length;
+    const remainingDays = eligibleDates.filter(
+      (date) => date >= localDate,
+    ).length;
+
+    weeklyTarget = Object.freeze({
+      completedBefore,
+      requiredToday: isWeeklyTargetRequired(
+        target,
+        completedBefore,
+        remainingDays,
+      ),
+      target,
+    });
+  }
+
   return Object.freeze({
     ...toRoutineHabit(habit),
+    ...(weeklyTarget ? { weeklyTarget } : {}),
     completed: completion !== undefined,
     completionId: completion?.id ?? null,
   });
 }
 
-function toProgress(habits: readonly TodayHabit[]): TodayProgress {
+export function getTodayProgress(habits: readonly TodayHabit[]): TodayProgress {
+  const required = habits.filter(
+    ({ weeklyTarget }) => weeklyTarget?.requiredToday ?? true,
+  );
   return Object.freeze({
-    completedCount: habits.filter(({ completed }) => completed).length,
-    totalCount: habits.length,
+    completedCount: required.filter(({ completed }) => completed).length,
+    totalCount: required.length,
   });
 }
 
@@ -313,7 +364,11 @@ function isActiveAndScheduledToday(
   return (
     habit.archived_at === null &&
     isHabitScheduledOnDate(
-      { startDate: habit.start_date, weekdays: habit.weekdays },
+      {
+        startDate: habit.start_date,
+        weekdays: habit.weekdays,
+        weeklyTarget: habit.weekly_target,
+      },
       localDate,
     )
   );
@@ -324,15 +379,17 @@ export function buildTodayRoutineViewModel(
   habits: readonly RoutineHabitRecord[],
   timeZone: string,
   instant: Date | number | string = new Date(),
+  weekStartsOn: WeekStartsOn = DEFAULT_WEEK_START,
 ): TodayRoutineViewModel {
   const localDate = toLocalDateKey(instant, timeZone);
+  const weekDates = getLocalWeekDateKeysFromDate(localDate, weekStartsOn);
   const orderedRoutines = [...routines].sort(compareRoutines);
   const grouped = groupHabits(orderedRoutines, habits);
   const sections: TodaySection[] = [];
   const standalone = Object.freeze(
     grouped.standalone
       .filter((habit) => isActiveAndScheduledToday(habit, localDate))
-      .map((habit) => toTodayHabit(habit, localDate)),
+      .map((habit) => toTodayHabit(habit, localDate, weekDates)),
   );
 
   if (standalone.length > 0) {
@@ -340,7 +397,7 @@ export function buildTodayRoutineViewModel(
       Object.freeze({
         kind: "standalone",
         habits: standalone,
-        progress: toProgress(standalone),
+        progress: getTodayProgress(standalone),
       }),
     );
   }
@@ -349,7 +406,7 @@ export function buildTodayRoutineViewModel(
     const scheduled = Object.freeze(
       (grouped.byRoutineId.get(routine.id) ?? [])
         .filter((habit) => isActiveAndScheduledToday(habit, localDate))
-        .map((habit) => toTodayHabit(habit, localDate)),
+        .map((habit) => toTodayHabit(habit, localDate, weekDates)),
     );
     if (scheduled.length === 0) continue;
 
@@ -357,7 +414,7 @@ export function buildTodayRoutineViewModel(
       Object.freeze({
         habits: scheduled,
         kind: "routine",
-        progress: toProgress(scheduled),
+        progress: getTodayProgress(scheduled),
         routine: toRoutineSummary(routine),
       }),
     );
@@ -366,7 +423,7 @@ export function buildTodayRoutineViewModel(
   const allHabits = sections.flatMap(
     ({ habits: sectionHabits }) => sectionHabits,
   );
-  const progress = toProgress(allHabits);
+  const progress = getTodayProgress(allHabits);
 
   return Object.freeze({
     completedCount: progress.completedCount,
@@ -404,7 +461,11 @@ function createWeeklyRow(
       const scheduled =
         (archivedLocalDate === null || localDate <= archivedLocalDate) &&
         isHabitScheduledOnDate(
-          { startDate: habit.start_date, weekdays: habit.weekdays },
+          {
+            startDate: habit.start_date,
+            weekdays: habit.weekdays,
+            weeklyTarget: habit.weekly_target,
+          },
           localDate,
         );
 
@@ -418,7 +479,26 @@ function createWeeklyRow(
 
   if (cells.every(({ state }) => state === "not-scheduled")) return null;
 
-  return Object.freeze({ ...toRoutineHabit(habit), cells });
+  const eligibleDates = Object.freeze(
+    localDates.filter(
+      (date) =>
+        date >= habit.start_date &&
+        (archivedLocalDate === null || date <= archivedLocalDate),
+    ),
+  );
+  const weeklyTarget =
+    habit.weekly_target == null
+      ? undefined
+      : Object.freeze({
+          eligibleDates,
+          target: Math.min(habit.weekly_target, eligibleDates.length),
+        });
+
+  return Object.freeze({
+    ...toRoutineHabit(habit),
+    cells,
+    ...(weeklyTarget ? { weeklyTarget } : {}),
+  });
 }
 
 export function buildWeeklyRoutineViewModel(

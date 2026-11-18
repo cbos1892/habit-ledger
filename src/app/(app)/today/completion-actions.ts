@@ -62,7 +62,9 @@ export async function setHabitCompletion(
     const supabase = await createServerSupabaseClient();
     const { data: habit, error: habitError } = await supabase
       .from("habits")
-      .select("id, start_date, archived_at, habit_schedules(weekday)")
+      .select(
+        "id, start_date, archived_at, weekly_target, habit_schedules(weekday)",
+      )
       .eq("id", habitId)
       .eq("owner_id", profile.id)
       .maybeSingle();
@@ -82,6 +84,7 @@ export async function setHabitCompletion(
       !isHabitScheduledOnDate(
         {
           startDate: habit.start_date,
+          weeklyTarget: habit.weekly_target,
           weekdays: habit.habit_schedules
             .map(({ weekday }) => weekday)
             .filter(isIsoWeekday),

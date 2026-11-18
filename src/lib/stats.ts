@@ -9,6 +9,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   addLocalDateDays,
   getLocalWeekStartDate,
+  getLocalWeekDateKeysFromDate,
   toLocalDateKey,
   type WeekStartsOn,
 } from "@/lib/time-zone";
@@ -71,7 +72,7 @@ export type StatisticsViewOptions = Readonly<{
 }>;
 
 const statisticHabitSelection =
-  "id, name, icon, color, start_date, archived_at, display_order, habit_schedules(weekday), completions(local_date)" as const;
+  "id, name, icon, color, start_date, archived_at, display_order, weekly_target, habit_schedules(weekday), completions(local_date)" as const;
 
 type StatisticHabitRecord = Pick<
   Tables<"habits">,
@@ -82,6 +83,7 @@ type StatisticHabitRecord = Pick<
   | "start_date"
   | "archived_at"
   | "display_order"
+  | "weekly_target"
 > & {
   completions: Pick<Tables<"completions">, "local_date">[];
   habit_schedules: { weekday: number }[];
@@ -139,6 +141,7 @@ function isOpportunity(habit: IndexedHabit, localDate: string): boolean {
     {
       startDate: habit.record.start_date,
       weekdays: habit.weekdays,
+      weeklyTarget: habit.record.weekly_target,
     },
     localDate,
   );
@@ -147,11 +150,50 @@ function isOpportunity(habit: IndexedHabit, localDate: string): boolean {
 function calculateRate(
   habits: readonly IndexedHabit[],
   localDates: readonly string[],
+  weekStartsOn: WeekStartsOn,
 ): CompletionRate {
   let completedCount = 0;
   let opportunityCount = 0;
 
+  const datesByWeek = new Map<string, string[]>();
+  if (habits.some(({ record }) => record.weekly_target != null)) {
+    for (const localDate of localDates) {
+      const weekStart = getLocalWeekStartDate(localDate, weekStartsOn);
+      const dates = datesByWeek.get(weekStart) ?? [];
+      dates.push(localDate);
+      datesByWeek.set(weekStart, dates);
+    }
+  }
+
   for (const habit of habits) {
+    const target = habit.record.weekly_target;
+    if (target != null) {
+      for (const [weekStart, dates] of datesByWeek) {
+        const eligibleDates = getLocalWeekDateKeysFromDate(
+          weekStart,
+          weekStartsOn,
+        ).filter((date) => isOpportunity(habit, date));
+        const quota = Math.min(target, eligibleDates.length);
+        const logged = eligibleDates.filter((date) =>
+          habit.completions.has(date),
+        );
+        const credited = logged.slice(0, quota);
+        // Attribute outstanding check-ins to the latest eligible days so a
+        // partial calendar week contributes only its logged and due check-ins.
+        const unlogged = eligibleDates.filter(
+          (date) => !habit.completions.has(date),
+        );
+        const due = unlogged.slice(unlogged.length - (quota - credited.length));
+        const completed = credited.filter((date) =>
+          dates.includes(date),
+        ).length;
+        completedCount += completed;
+        opportunityCount +=
+          completed + due.filter((date) => dates.includes(date)).length;
+      }
+      continue;
+    }
+
     for (const localDate of localDates) {
       if (!isOpportunity(habit, localDate)) continue;
 
@@ -173,8 +215,9 @@ function calculateRate(
 function createHabitStatistic(
   habit: IndexedHabit,
   localDates: readonly string[],
+  weekStartsOn: WeekStartsOn,
 ): HabitCompletionStatistic {
-  const rate = calculateRate([habit], localDates);
+  const rate = calculateRate([habit], localDates, weekStartsOn);
 
   return Object.freeze({
     id: habit.record.id,
@@ -229,14 +272,16 @@ export async function getStatisticsViewModel(
   const currentHabits = indexedHabits.filter(
     ({ record }) => record.archived_at === null,
   );
-  const overallRate = calculateRate(indexedHabits, summaryDates);
+  const overallRate = calculateRate(indexedHabits, summaryDates, weekStartsOn);
   const overall = Object.freeze({
     ...overallRate,
     endDate: currentLocalDate,
     startDate: summaryStartDate,
   });
   const habits = Object.freeze(
-    currentHabits.map((habit) => createHabitStatistic(habit, summaryDates)),
+    currentHabits.map((habit) =>
+      createHabitStatistic(habit, summaryDates, weekStartsOn),
+    ),
   );
   const weekly = Object.freeze(
     Array.from({ length: TREND_WEEK_COUNT }, (_, index) => {
@@ -247,6 +292,7 @@ export async function getStatisticsViewModel(
       const rate = calculateRate(
         indexedHabits,
         getDateRange(startDate, calculationEndDate),
+        weekStartsOn,
       );
 
       return Object.freeze({

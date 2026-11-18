@@ -42,7 +42,7 @@ export type WeeklyViewOptions = Readonly<{
 }>;
 
 const weeklyHabitSelection =
-  "id, name, icon, color, start_date, archived_at, display_order, routine_id, routine_display_order, routines(id, name, display_order), habit_schedules(weekday), completions(id, local_date)" as const;
+  "id, name, icon, color, start_date, archived_at, display_order, routine_id, routine_display_order, weekly_target, routines(id, name, display_order), habit_schedules(weekday), completions(id, local_date)" as const;
 
 type WeeklyHabitRecord = Pick<
   Tables<"habits">,
@@ -55,6 +55,7 @@ type WeeklyHabitRecord = Pick<
   | "routine_display_order"
   | "routine_id"
   | "start_date"
+  | "weekly_target"
 > & {
   completions: Pick<Tables<"completions">, "id" | "local_date">[];
   habit_schedules: { weekday: number }[];
@@ -73,6 +74,7 @@ function normalizeHabit(habit: WeeklyHabitRecord): RoutineHabitRecord {
     routine_display_order: habit.routine_display_order ?? null,
     routine_id: habit.routine_id ?? null,
     start_date: habit.start_date,
+    weekly_target: habit.weekly_target,
     weekdays: habit.habit_schedules
       .map(({ weekday }) => weekday)
       .filter(isIsoWeekday),
