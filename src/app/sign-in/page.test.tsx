@@ -19,10 +19,6 @@ vi.mock("./magic-link-form", () => ({
   MagicLinkForm: () => null,
 }));
 
-vi.mock("./google-sign-in-form", () => ({
-  GoogleSignInForm: () => null,
-}));
-
 describe("sign-in page session handling", () => {
   beforeEach(() => {
     vi.mocked(getCurrentUser).mockReset();

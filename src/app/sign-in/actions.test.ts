@@ -1,75 +1,58 @@
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-import { signInWithGoogle } from "./actions";
+import { requestMagicLink } from "./actions";
 
 vi.mock("next/headers", () => ({
   headers: vi.fn(),
-}));
-
-vi.mock("next/navigation", () => ({
-  redirect: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(),
 }));
 
-const signInWithOAuth = vi.fn();
+const signInWithOtp = vi.fn();
 
-describe("signInWithGoogle", () => {
+describe("requestMagicLink", () => {
   beforeEach(() => {
-    signInWithOAuth.mockReset();
-    vi.mocked(headers).mockReset();
-    vi.mocked(redirect).mockReset();
-    vi.mocked(createServerSupabaseClient).mockReset();
+    signInWithOtp.mockReset();
 
     vi.mocked(headers).mockResolvedValue(
-      new Headers({ origin: "https://habitledger.vercel.app" }),
+      new Headers({ origin: "https://habitledger.curtisbos.com" }),
     );
     vi.mocked(createServerSupabaseClient).mockResolvedValue({
-      auth: { signInWithOAuth },
+      auth: { signInWithOtp },
     } as never);
   });
 
-  it("starts Google OAuth with the application callback and redirects", async () => {
-    signInWithOAuth.mockResolvedValue({
-      data: {
-        url: "https://accounts.google.com/oauth/authorize?client_id=test",
-      },
-      error: null,
+  it("requests a one-time email for the supplied address", async () => {
+    signInWithOtp.mockResolvedValue({ error: null });
+    const form = new FormData();
+    form.set("email", " user@example.com ");
+
+    await expect(requestMagicLink({ status: "idle" }, form)).resolves.toEqual({
+      status: "sent",
     });
-
-    const result = await signInWithGoogle({ status: "idle" }, new FormData());
-
-    expect(signInWithOAuth).toHaveBeenCalledWith({
-      provider: "google",
+    expect(signInWithOtp).toHaveBeenCalledWith({
+      email: "user@example.com",
       options: {
-        redirectTo: "https://habitledger.vercel.app/auth/callback?next=/today",
+        emailRedirectTo:
+          "https://habitledger.curtisbos.com/auth/callback?next=/today",
       },
     });
-    expect(redirect).toHaveBeenCalledWith(
-      "https://accounts.google.com/oauth/authorize?client_id=test",
-    );
-    expect(result).toBeUndefined();
   });
 
-  it("returns a recoverable error when Supabase cannot start OAuth", async () => {
-    signInWithOAuth.mockResolvedValue({
-      data: { url: null },
-      error: new Error("provider disabled"),
-    });
+  it("returns recoverable feedback if sending fails", async () => {
+    signInWithOtp.mockResolvedValue({ error: new Error("SMTP unavailable") });
+    const form = new FormData();
+    form.set("email", "user@example.com");
 
-    await expect(
-      signInWithGoogle({ status: "idle" }, new FormData()),
-    ).resolves.toEqual({
+    await expect(requestMagicLink({ status: "idle" }, form)).resolves.toEqual({
       status: "error",
       message:
-        "We couldn't start Google sign-in right now. Try again in a moment.",
+        "We couldn't send a sign-in link right now. Wait a moment and try again.",
     });
-    expect(redirect).not.toHaveBeenCalled();
   });
 });

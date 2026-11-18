@@ -5,7 +5,6 @@ import { Card, Feedback } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth/current-user";
 
 import { MagicLinkForm } from "./magic-link-form";
-import { GoogleSignInForm } from "./google-sign-in-form";
 import styles from "./sign-in.module.css";
 
 export const metadata: Metadata = {
@@ -25,9 +24,6 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const hasCallbackError =
     error === "invalid_or_expired" ||
     (Array.isArray(error) && error.includes("invalid_or_expired"));
-  const hasOAuthError =
-    error === "oauth_failed" ||
-    (Array.isArray(error) && error.includes("oauth_failed"));
 
   return (
     <main className={styles.page}>
@@ -45,8 +41,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             Welcome back.
           </h1>
           <p className={styles.description}>
-            Continue with Google, or request a secure one-time sign-in link by
-            email. No password to remember.
+            Enter your email address to get a one-time sign-in link.
           </p>
         </div>
 
@@ -59,18 +54,6 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               </p>
             </Feedback>
           ) : null}
-          {hasOAuthError ? (
-            <Feedback title="Google sign-in was not completed" tone="warning">
-              <p>
-                Google could not sign you in, or the request was cancelled. Try
-                again or use an email link instead.
-              </p>
-            </Feedback>
-          ) : null}
-          <GoogleSignInForm />
-          <div className={styles.divider} aria-hidden="true">
-            <span>or continue with email</span>
-          </div>
           <MagicLinkForm />
         </Card>
 
