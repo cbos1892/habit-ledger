@@ -95,6 +95,7 @@ describe("habit form actions", () => {
       p_routine_id: null,
       p_start_date: "2026-08-10",
       p_weekdays: [1, 2, 3, 4, 5, 6, 7],
+      p_weekly_target: null,
     });
     expect(revalidatePath).toHaveBeenCalledWith("/setup");
     expect(redirect).toHaveBeenCalledWith("/setup?habit=created");
@@ -118,6 +119,7 @@ describe("habit form actions", () => {
       p_routine_id: null,
       p_start_date: "2026-08-10",
       p_weekdays: [1, 2, 3, 4, 5, 6, 7],
+      p_weekly_target: null,
     });
     expect(redirect).toHaveBeenCalledWith("/setup?habit=updated");
   });

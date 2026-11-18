@@ -53,6 +53,7 @@ export default async function EditHabitPage({
             routineId: habit.routine_id ?? "",
             startDate: habit.start_date,
             weekdays: habit.weekdays,
+            weeklyTarget: habit.weekly_target?.toString(),
           }}
           mode="edit"
           routines={routines}

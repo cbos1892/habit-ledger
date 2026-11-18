@@ -12,13 +12,18 @@ export type HabitFormValues = {
   routineId: string;
   startDate: string;
   weekdays: IsoWeekday[];
+  weeklyTarget?: string;
 };
 
 export type HabitFormErrors = Partial<Record<keyof HabitFormValues, string>>;
 
-export type ValidatedHabit = Omit<HabitFormValues, "color" | "routineId"> & {
+export type ValidatedHabit = Omit<
+  HabitFormValues,
+  "color" | "routineId" | "weeklyTarget"
+> & {
   color: HabitColor;
   routineId: string | null;
+  weeklyTarget: number | null;
 };
 
 export type HabitFormValidation =
@@ -78,6 +83,8 @@ function readWeekdays(formData: FormData): {
 
 export function validateHabitForm(formData: FormData): HabitFormValidation {
   const schedule = readWeekdays(formData);
+  const weeklyMode = readText(formData, "scheduleMode") === "weekly";
+  const target = readText(formData, "weeklyTarget");
   const values: HabitFormValues = {
     name: readText(formData, "name"),
     icon: readText(formData, "icon"),
@@ -85,6 +92,7 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
     routineId: readText(formData, "routineId"),
     startDate: readText(formData, "startDate"),
     weekdays: schedule.weekdays,
+    ...(weeklyMode ? { weeklyTarget: target } : {}),
   };
   const errors: HabitFormErrors = {};
 
@@ -114,7 +122,11 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
     errors.startDate = "Choose a valid start date.";
   }
 
-  if (schedule.invalid || values.weekdays.length === 0) {
+  if (weeklyMode && !/^[1-7]$/.test(target)) {
+    errors.weeklyTarget = "Choose a target from 1 to 7 times per week.";
+  }
+
+  if (!weeklyMode && (schedule.invalid || values.weekdays.length === 0)) {
     errors.weekdays = "Choose at least one day of the week.";
   }
 
@@ -128,6 +140,7 @@ export function validateHabitForm(formData: FormData): HabitFormValidation {
       ...values,
       color: values.color as HabitColor,
       routineId: values.routineId || null,
+      weeklyTarget: weeklyMode ? Number(target) : null,
     },
     values,
   };

@@ -139,6 +139,7 @@ export async function createHabit(
         p_routine_id: validation.data.routineId,
         p_start_date: validation.data.startDate,
         p_weekdays: validation.data.weekdays,
+        p_weekly_target: validation.data.weeklyTarget,
       },
     );
 
@@ -147,7 +148,8 @@ export async function createHabit(
     return failure(validation.values);
   }
 
-  revalidatePath("/setup");
+  revalidateRoutineViews();
+  revalidatePath("/stats");
   redirect("/setup?habit=created");
 }
 
@@ -176,6 +178,7 @@ export async function updateHabit(
         p_routine_id: validation.data.routineId,
         p_start_date: validation.data.startDate,
         p_weekdays: validation.data.weekdays,
+        p_weekly_target: validation.data.weeklyTarget,
       },
     );
 
@@ -184,7 +187,8 @@ export async function updateHabit(
     return failure(validation.values);
   }
 
-  revalidatePath("/setup");
+  revalidateRoutineViews();
+  revalidatePath("/stats");
   redirect("/setup?habit=updated");
 }
 

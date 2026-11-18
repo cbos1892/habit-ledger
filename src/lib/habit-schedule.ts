@@ -7,6 +7,7 @@ export type IsoWeekday = (typeof ISO_WEEKDAYS)[number];
 export type HabitSchedule = {
   startDate: string;
   weekdays: readonly IsoWeekday[];
+  weeklyTarget?: number | null;
 };
 
 export function isIsoWeekday(value: number): value is IsoWeekday {
@@ -49,5 +50,16 @@ export function isHabitScheduledOnDate(
 ): boolean {
   const weekday = getIsoWeekday(localDate);
 
-  return localDate >= schedule.startDate && schedule.weekdays.includes(weekday);
+  return (
+    localDate >= schedule.startDate &&
+    (schedule.weeklyTarget != null || schedule.weekdays.includes(weekday))
+  );
+}
+
+export function isWeeklyTargetRequired(
+  target: number,
+  completedBefore: number,
+  remainingDays: number,
+): boolean {
+  return completedBefore < target && target - completedBefore >= remainingDays;
 }

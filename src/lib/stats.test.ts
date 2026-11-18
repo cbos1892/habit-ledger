@@ -32,6 +32,7 @@ type HabitRecord = {
   id: string;
   name: string;
   start_date: string;
+  weekly_target?: number;
 };
 
 function habit(overrides: Partial<HabitRecord> = {}): HabitRecord {
@@ -57,6 +58,44 @@ describe("statistics view model", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(createServerSupabaseClient).mockResolvedValue({ from } as never);
+  });
+
+  it("counts weekly targets once and adds missing check-ins as they come due", async () => {
+    finalOrder.mockResolvedValue({
+      data: [
+        habit({
+          weekly_target: 3,
+          start_date: "2026-08-03",
+          completions: complete([
+            "2026-08-03",
+            "2026-08-04",
+            "2026-08-06",
+            "2026-08-09",
+            "2026-08-10",
+          ]),
+        }),
+      ],
+      error: null,
+    });
+
+    const stats = await getStatisticsViewModel("user-123", "UTC", {
+      instant: "2026-08-15T12:00:00Z",
+    });
+
+    expect(stats.weekly[6]).toMatchObject({
+      completedCount: 3,
+      opportunityCount: 3,
+      percentage: 100,
+    });
+    expect(stats.weekly[7]).toMatchObject({
+      completedCount: 1,
+      opportunityCount: 2,
+      percentage: 50,
+    });
+    expect(stats.overall).toMatchObject({
+      completedCount: 4,
+      opportunityCount: 5,
+    });
   });
 
   it("uses the user's local date at a UTC boundary and one owner-scoped bounded query", async () => {

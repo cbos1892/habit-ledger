@@ -336,6 +336,12 @@
   background: color-mix(in srgb, var(--habit-color) 22%, var(--color-surface));
 }
 
+.weeklyTargetCount {
+  justify-self: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
 .rowProgressFill {
   display: block;
   height: 100%;
@@ -634,4 +640,9 @@
     animation: none;
     box-shadow: inset 0 0 0 2px var(--color-success);
   }
+}
+
+.legend i[data-state="optional"],
+.cell[data-optional="true"][data-state="incomplete"] .cellMark {
+  border-style: dotted;
 }

@@ -92,6 +92,7 @@ export type Database = {
           routine_id: string | null;
           start_date: string;
           updated_at: string;
+          weekly_target: number | null;
         };
         Insert: {
           archived_at?: string | null;
@@ -106,6 +107,7 @@ export type Database = {
           routine_id?: string | null;
           start_date: string;
           updated_at?: string;
+          weekly_target?: number | null;
         };
         Update: {
           archived_at?: string | null;
@@ -120,6 +122,7 @@ export type Database = {
           routine_id?: string | null;
           start_date?: string;
           updated_at?: string;
+          weekly_target?: number | null;
         };
         Relationships: [
           {
@@ -234,6 +237,7 @@ export type Database = {
           p_routine_id: string | null;
           p_start_date: string;
           p_weekdays: number[];
+          p_weekly_target?: number | null;
         };
         Returns: string;
       };
@@ -287,6 +291,7 @@ export type Database = {
           p_routine_id: string | null;
           p_start_date: string;
           p_weekdays: number[];
+          p_weekly_target?: number | null;
         };
         Returns: string;
       };

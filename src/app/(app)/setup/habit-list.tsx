@@ -42,6 +42,9 @@ function HabitIdentity({ habit }: { habit: SetupHabit }) {
             role="img"
           />
         </span>
+        {habit.weeklyTarget != null ? (
+          <small>{habit.weeklyTarget}× per week</small>
+        ) : null}
       </span>
     </div>
   );

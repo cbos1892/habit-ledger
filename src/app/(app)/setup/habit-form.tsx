@@ -59,6 +59,12 @@ export function HabitForm({
   const [weekdays, setWeekdays] = useState(initialValues.weekdays);
   const values = state.status === "error" ? state.values : initialValues;
   const errors = state.status === "error" ? state.errors : {};
+  const [scheduleMode, setScheduleMode] = useState(
+    initialValues.weeklyTarget === undefined ? "weekdays" : "weekly",
+  );
+  const [weeklyTarget, setWeeklyTarget] = useState(
+    initialValues.weeklyTarget ?? "3",
+  );
   const isEveryDay = weekdays.length === ISO_WEEKDAYS.length;
 
   function toggleWeekday(weekday: IsoWeekday, selected: boolean) {
@@ -179,44 +185,76 @@ export function HabitForm({
           disabled={pending}
         >
           <legend>Schedule</legend>
-          <p className={styles.scheduleDescription}>
-            Choose every day or the weekdays when this habit should appear.
-          </p>
-          <label className={styles.everyDayOption}>
-            <input
-              checked={isEveryDay}
-              onChange={(event) =>
-                setWeekdays(event.target.checked ? [...ISO_WEEKDAYS] : [])
-              }
-              type="checkbox"
-            />
-            <span>Every day</span>
-          </label>
-          <div className={styles.weekdayOptions}>
-            {ISO_WEEKDAYS.map((weekday) => (
-              <label className={styles.weekdayOption} key={weekday}>
+          <SelectField
+            id="habit-schedule-mode"
+            label="Schedule type"
+            name="scheduleMode"
+            onChange={(event) => setScheduleMode(event.target.value)}
+            value={scheduleMode}
+          >
+            <option value="weekdays">Specific days</option>
+            <option value="weekly">Weekly target</option>
+          </SelectField>
+          {scheduleMode === "weekly" ? (
+            <SelectField
+              description="Check in any day. It becomes required when you need every remaining day to meet the target."
+              error={errors.weeklyTarget}
+              id="habit-weekly-target"
+              label="Times per week"
+              name="weeklyTarget"
+              onChange={(event) => setWeeklyTarget(event.target.value)}
+              value={weeklyTarget}
+            >
+              {ISO_WEEKDAYS.map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))}
+            </SelectField>
+          ) : (
+            <>
+              <p className={styles.scheduleDescription}>
+                Choose every day or the weekdays when this habit should appear.
+              </p>
+              <label className={styles.everyDayOption}>
                 <input
-                  aria-label={weekdayLabels[weekday]}
-                  checked={weekdays.includes(weekday)}
-                  name="weekdays"
+                  checked={isEveryDay}
                   onChange={(event) =>
-                    toggleWeekday(weekday, event.target.checked)
+                    setWeekdays(event.target.checked ? [...ISO_WEEKDAYS] : [])
                   }
                   type="checkbox"
-                  value={weekday}
                 />
-                <span aria-hidden="true">
-                  {weekdayLabels[weekday].slice(0, 3)}
-                </span>
-                <span className={styles.srOnly}>{weekdayLabels[weekday]}</span>
+                <span>Every day</span>
               </label>
-            ))}
-          </div>
-          {errors.weekdays ? (
-            <p className={styles.error} id="habit-weekdays-error">
-              {errors.weekdays}
-            </p>
-          ) : null}
+              <div className={styles.weekdayOptions}>
+                {ISO_WEEKDAYS.map((weekday) => (
+                  <label className={styles.weekdayOption} key={weekday}>
+                    <input
+                      aria-label={weekdayLabels[weekday]}
+                      checked={weekdays.includes(weekday)}
+                      name="weekdays"
+                      onChange={(event) =>
+                        toggleWeekday(weekday, event.target.checked)
+                      }
+                      type="checkbox"
+                      value={weekday}
+                    />
+                    <span aria-hidden="true">
+                      {weekdayLabels[weekday].slice(0, 3)}
+                    </span>
+                    <span className={styles.srOnly}>
+                      {weekdayLabels[weekday]}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {errors.weekdays ? (
+                <p className={styles.error} id="habit-weekdays-error">
+                  {errors.weekdays}
+                </p>
+              ) : null}
+            </>
+          )}
         </fieldset>
 
         <div className={styles.actions}>

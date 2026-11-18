@@ -15,6 +15,7 @@ import type {
   WeeklyHabitRow,
   WeeklyViewModel,
 } from "@/lib/week";
+import { isWeeklyTargetRequired } from "@/lib/habit-schedule";
 import { addLocalDateDays, getLocalWeekStartDate } from "@/lib/time-zone";
 
 import { setHabitCompletion } from "./completion-actions";
@@ -74,6 +75,7 @@ type OptimisticCellUpdate = Readonly<{
 type Progress = Readonly<{
   completed: number;
   total: number;
+  hasOpportunities?: boolean;
 }>;
 
 type Celebration = Readonly<{
@@ -130,7 +132,20 @@ function getClampedScrollLeft(scroller: HTMLElement) {
   return Math.min(Math.max(scroller.scrollLeft, 0), maxScrollLeft);
 }
 
-function getRowProgress(row: WeeklyHabitRow) {
+function getRowProgress(row: WeeklyHabitRow): Progress {
+  const target = row.weeklyTarget;
+  if (target) {
+    const completed = row.cells.filter(
+      (cell) =>
+        cell.state === "completed" &&
+        target.eligibleDates.includes(cell.localDate),
+    ).length;
+    return {
+      completed: Math.min(completed, target.target),
+      total: target.target,
+    };
+  }
+
   const scheduledCells = row.cells.filter(
     ({ state }) => state !== "not-scheduled",
   );
@@ -142,25 +157,51 @@ function getRowProgress(row: WeeklyHabitRow) {
   };
 }
 
+function isRequired(row: WeeklyHabitRow, localDate: string): boolean {
+  const target = row.weeklyTarget;
+  if (!target) return true;
+
+  const dayIndex = target.eligibleDates.indexOf(localDate);
+  if (dayIndex < 0) return false;
+
+  const completedBefore = row.cells.filter(
+    (cell) =>
+      cell.state === "completed" &&
+      cell.localDate < localDate &&
+      target.eligibleDates.includes(cell.localDate),
+  ).length;
+  return isWeeklyTargetRequired(
+    target.target,
+    completedBefore,
+    target.eligibleDates.length - dayIndex,
+  );
+}
+
 function getDayProgress(
   rows: readonly WeeklyHabitRow[],
   localDate: string,
 ): Progress {
-  const scheduledCells = rows.flatMap((row) =>
+  const requiredCells = rows.flatMap((row) =>
     row.cells.filter(
-      (cell) => cell.localDate === localDate && cell.state !== "not-scheduled",
+      (cell) =>
+        cell.localDate === localDate &&
+        cell.state !== "not-scheduled" &&
+        isRequired(row, localDate),
     ),
   );
 
   return {
-    completed: scheduledCells.filter(({ state }) => state === "completed")
+    completed: requiredCells.filter(({ state }) => state === "completed")
       .length,
-    total: scheduledCells.length,
+    total: requiredCells.length,
+    hasOpportunities: rows.some(({ weeklyTarget }) =>
+      weeklyTarget?.eligibleDates.includes(localDate),
+    ),
   };
 }
 
-function isComplete({ completed, total }: Progress) {
-  return total > 0 && completed === total;
+function isComplete({ completed, total, hasOpportunities }: Progress) {
+  return (total > 0 || hasOpportunities === true) && completed === total;
 }
 
 function DayHeaders({
@@ -254,22 +295,33 @@ function HabitRow({
             {row.icon}
           </span>
           <span className={styles.srOnly}>{row.name}</span>
-          <span
-            className={styles.rowProgress}
-            role="progressbar"
-            aria-label={`${row.name} weekly progress`}
-            aria-valuemin={0}
-            aria-valuemax={progress.total}
-            aria-valuenow={progress.completed}
-            aria-valuetext={`${progress.completed} of ${progress.total} scheduled days complete`}
-          >
+          {progress.total > 0 ? (
             <span
-              className={styles.rowProgressFill}
-              style={{
-                width: `${Math.round((progress.completed / progress.total) * 100)}%`,
-              }}
-            />
-          </span>
+              className={styles.rowProgress}
+              role="progressbar"
+              aria-label={`${row.name} weekly progress`}
+              aria-valuemin={0}
+              aria-valuemax={progress.total}
+              aria-valuenow={progress.completed}
+              aria-valuetext={
+                row.weeklyTarget
+                  ? `${progress.completed} of ${progress.total} weekly check-ins complete`
+                  : `${progress.completed} of ${progress.total} scheduled days complete`
+              }
+            >
+              <span
+                className={styles.rowProgressFill}
+                style={{
+                  width: `${Math.round((progress.completed / progress.total) * 100)}%`,
+                }}
+              />
+            </span>
+          ) : null}
+          {row.weeklyTarget && progress.total > 0 ? (
+            <small className={styles.weeklyTargetCount} aria-hidden="true">
+              {progress.completed}/{progress.total}
+            </small>
+          ) : null}
         </span>
       </th>
       {row.cells.map((cell) => {
@@ -284,13 +336,17 @@ function HabitRow({
         const editable = timing !== "future" && cell.state !== "not-scheduled";
         const completed = cell.state === "completed";
         const pending = pendingCells.has(getCellKey(row.id, cell.localDate));
-        const label = `${row.name}, ${fullDateFormatter.format(date)}${timingLabel}, ${getStateLabel(cell)}`;
+        const optional =
+          row.weeklyTarget?.eligibleDates.includes(cell.localDate) &&
+          !isRequired(row, cell.localDate);
+        const label = `${row.name}, ${fullDateFormatter.format(date)}${timingLabel}, ${getStateLabel(cell)}${optional ? ", optional" : ""}`;
 
         return (
           <td
             className={styles.cell}
             data-celebrating={celebratingDayDates.has(cell.localDate)}
             data-perfect={perfectDayDates.has(cell.localDate)}
+            data-optional={optional}
             data-state={cell.state}
             data-timing={timing}
             key={cell.localDate}
@@ -369,7 +425,10 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
   );
   const perfectDayDates = new Set(
     [...dayProgress]
-      .filter(([, progress]) => isComplete(progress))
+      .filter(
+        ([date, progress]) =>
+          date <= optimisticWeek.currentLocalDate && isComplete(progress),
+      )
       .map(([localDate]) => localDate),
   );
 
@@ -560,6 +619,12 @@ export function WeekView({ week }: { week: WeeklyViewModel }) {
                 <i data-state="incomplete" />
                 Incomplete
               </span>
+              {rows.some(({ weeklyTarget }) => weeklyTarget) ? (
+                <span>
+                  <i data-state="optional" />
+                  Optional
+                </span>
+              ) : null}
               <span>
                 <i data-state="not-scheduled" />
                 Not scheduled

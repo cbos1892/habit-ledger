@@ -43,6 +43,7 @@ describe("habit form validation", () => {
         color: "fern",
         routineId: null,
         startDate: "2026-08-10",
+        weeklyTarget: null,
         weekdays: [1, 2, 3, 4, 5, 6, 7],
       },
       values: {
@@ -54,6 +55,24 @@ describe("habit form validation", () => {
         weekdays: [1, 2, 3, 4, 5, 6, 7],
       },
     });
+  });
+
+  it("validates a weekly target without selected weekdays", () => {
+    const data = habitFormData({ weekdays: [] });
+    data.set("scheduleMode", "weekly");
+    data.set("weeklyTarget", "3");
+    expect(validateHabitForm(data)).toMatchObject({
+      success: true,
+      data: { weeklyTarget: 3, weekdays: [] },
+    });
+
+    for (const invalid of ["", "0", "8", "2.5"]) {
+      data.set("weeklyTarget", invalid);
+      expect(validateHabitForm(data)).toMatchObject({
+        success: false,
+        errors: { weeklyTarget: expect.any(String) },
+      });
+    }
   });
 
   it("accepts an optional routine and rejects malformed routine IDs", () => {

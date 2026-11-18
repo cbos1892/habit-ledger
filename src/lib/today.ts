@@ -10,14 +10,19 @@ import {
   type TodaySection,
 } from "@/lib/routine-view-models";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { toLocalDateKey } from "@/lib/time-zone";
+import {
+  DEFAULT_WEEK_START,
+  addLocalDateDays,
+  isWeekStartsOn,
+  toLocalDateKey,
+} from "@/lib/time-zone";
 import type { Tables } from "@/types/database";
 
 export type { TodayHabit, TodaySection };
 export type TodayViewModel = TodayRoutineViewModel;
 
 const todayHabitSelection =
-  "id, name, icon, color, start_date, archived_at, display_order, routine_id, routine_display_order, routines(id, name, display_order), habit_schedules(weekday), completions(id, local_date)" as const;
+  "id, name, icon, color, start_date, archived_at, display_order, routine_id, routine_display_order, weekly_target, profiles(week_starts_on), routines(id, name, display_order), habit_schedules(weekday), completions(id, local_date)" as const;
 
 type TodayHabitRecord = Pick<
   Tables<"habits">,
@@ -30,9 +35,11 @@ type TodayHabitRecord = Pick<
   | "routine_display_order"
   | "routine_id"
   | "start_date"
+  | "weekly_target"
 > & {
   completions: Pick<Tables<"completions">, "id" | "local_date">[];
   habit_schedules: { weekday: number }[];
+  profiles: Pick<Tables<"profiles">, "week_starts_on"> | null;
   routines: Pick<Tables<"routines">, "display_order" | "id" | "name"> | null;
 };
 
@@ -48,6 +55,7 @@ function normalizeHabit(habit: TodayHabitRecord): RoutineHabitRecord {
     routine_display_order: habit.routine_display_order ?? null,
     routine_id: habit.routine_id ?? null,
     start_date: habit.start_date,
+    weekly_target: habit.weekly_target,
     weekdays: habit.habit_schedules
       .map(({ weekday }) => weekday)
       .filter(isIsoWeekday),
@@ -72,24 +80,28 @@ export async function getTodayViewModel(
   instant: Date | number | string = new Date(),
 ): Promise<TodayViewModel> {
   const localDate = toLocalDateKey(instant, timeZone);
+  const earliestWeekStart = addLocalDateDays(localDate, -6);
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("habits")
     .select(todayHabitSelection)
     .eq("owner_id", ownerId)
     .is("archived_at", null)
-    .eq("completions.local_date", localDate)
+    .gte("completions.local_date", earliestWeekStart)
+    .lte("completions.local_date", localDate)
     .order("display_order")
     .order("id");
 
   if (error) throw new Error("Unable to load today's habits.");
 
   const habits = (data ?? []) as TodayHabitRecord[];
+  const weekStartsOn = habits[0]?.profiles?.week_starts_on;
 
   return buildTodayRoutineViewModel(
     getJoinedRoutines(habits),
     habits.map(normalizeHabit),
     timeZone,
     instant,
+    isWeekStartsOn(weekStartsOn) ? weekStartsOn : DEFAULT_WEEK_START,
   );
 }

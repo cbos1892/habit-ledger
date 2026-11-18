@@ -9,6 +9,8 @@ import {
   useTransition,
 } from "react";
 
+import { getTodayProgress } from "@/lib/routine-view-models";
+
 import type {
   TodayHabit,
   TodaySection,
@@ -50,19 +52,16 @@ function updateOptimisticCompletion(
     return {
       ...section,
       habits,
-      progress: {
-        completedCount: habits.filter(({ completed }) => completed).length,
-        totalCount: habits.length,
-      },
+      progress: getTodayProgress(habits),
     };
   });
   const habits = sections.flatMap(({ habits: sectionHabits }) => sectionHabits);
-  const completedCount = habits.filter(({ completed }) => completed).length;
+  const progress = getTodayProgress(habits);
 
   return {
     ...today,
-    completedCount,
-    progress: { completedCount, totalCount: habits.length },
+    ...progress,
+    progress,
     sections,
   };
 }
@@ -100,8 +99,8 @@ function Progress({
   completed: number;
   total: number;
 }) {
-  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
-  const perfect = completed === total && total > 0;
+  const percentage = total === 0 ? 100 : Math.round((completed / total) * 100);
+  const perfect = completed === total;
   const progressStyle = {
     "--today-progress": `${percentage}%`,
   } as CSSProperties;
@@ -113,20 +112,22 @@ function Progress({
       data-celebrating={celebrating}
       data-perfect={perfect}
     >
-      <div
-        aria-label={`${completed} of ${total} habits complete`}
-        aria-valuemax={total}
-        aria-valuemin={0}
-        aria-valuenow={completed}
-        className={styles.progressRing}
-        role="progressbar"
-        style={progressStyle}
-      >
-        <span>
-          <strong>{completed}</strong>
-          <small>of {total}</small>
-        </span>
-      </div>
+      {total > 0 ? (
+        <div
+          aria-label={`${completed} of ${total} habits complete`}
+          aria-valuemax={total}
+          aria-valuemin={0}
+          aria-valuenow={completed}
+          className={styles.progressRing}
+          role="progressbar"
+          style={progressStyle}
+        >
+          <span>
+            <strong>{completed}</strong>
+            <small>of {total}</small>
+          </span>
+        </div>
+      ) : null}
       <div className={styles.progressCopy}>
         <div className={styles.progressText}>
           <div className={styles.progressHeading}>
@@ -142,9 +143,11 @@ function Progress({
             </span>
           </div>
           <p className={styles.progressMessage}>
-            {perfect
-              ? "All done for today. Nicely tended."
-              : "A little progress is still progress."}
+            {total === 0
+              ? "No habits are required today."
+              : perfect
+                ? "All done for today. Nicely tended."
+                : "A little progress is still progress."}
           </p>
         </div>
       </div>
@@ -222,6 +225,7 @@ export function TodayView({ today }: TodayViewProps) {
     const mutationId = ++mutationSequence.current;
     const completesToday =
       nextCompleted &&
+      (habit.weeklyTarget?.requiredToday ?? true) &&
       optimisticToday.totalCount > 0 &&
       optimisticToday.completedCount + 1 === optimisticToday.totalCount;
     latestMutationByHabit.current.set(habitId, mutationId);
@@ -272,7 +276,10 @@ export function TodayView({ today }: TodayViewProps) {
         </div>
         {optimisticToday.status === "ready" ? (
           <p className={styles.summary}>
-            {optimisticToday.totalCount} scheduled{" "}
+            {optimisticToday.totalCount}{" "}
+            {habits.some(({ weeklyTarget }) => weeklyTarget)
+              ? "required"
+              : "scheduled"}{" "}
             {optimisticToday.totalCount === 1 ? "habit" : "habits"}
           </p>
         ) : null}
@@ -352,13 +359,18 @@ function HabitCard({
   habit: TodayHabit;
   mutateCompletion: (habitId: string) => void;
 }) {
+  const weeklyTarget = habit.weeklyTarget;
+  const weeklyProgress = weeklyTarget
+    ? `${Math.min(weeklyTarget.completedBefore + Number(habit.completed), weeklyTarget.target)} of ${weeklyTarget.target} this week · ${weeklyTarget.requiredToday ? "Required today" : "Optional today"}`
+    : null;
+
   return (
     <li>
       <button
         className={styles.habitRow}
         type="button"
         aria-pressed={habit.completed}
-        aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}`}
+        aria-label={`${habit.name}, ${habit.completed ? "complete" : "not complete"}${weeklyProgress ? `, ${weeklyProgress}` : ""}`}
         onClick={() => mutateCompletion(habit.id)}
       >
         <span className={styles.habitIdentity}>
@@ -368,7 +380,14 @@ function HabitCard({
           <span className={styles.habitIcon} aria-hidden="true">
             {habit.icon}
           </span>
-          <span className={styles.habitName}>{habit.name}</span>
+          <span className={styles.habitCopy}>
+            <span className={styles.habitName}>{habit.name}</span>
+            {weeklyProgress ? (
+              <span className={styles.habitWeeklyProgress}>
+                {weeklyProgress}
+              </span>
+            ) : null}
+          </span>
         </span>
         <span className={styles.habitAction} aria-hidden="true">
           {habit.completed ? "Complete" : "Check in"}
@@ -401,7 +420,9 @@ function RoutineCard({
             {section.routine.name}
           </span>
           <span className={styles.routineProgress}>
-            {completedCount} of {totalCount}
+            {totalCount === 0
+              ? "Optional today"
+              : `${completedCount} of ${totalCount}`}
           </span>
         </span>
       </header>
