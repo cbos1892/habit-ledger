@@ -46,11 +46,29 @@ a {
   translate: 0;
 }
 
+/* Keep mobile navigation in the document grid so WebKit can reposition it
+   when an iPad window changes size or its browser chrome collapses. */
 .app-shell {
+  display: grid;
+  grid-template-areas: "header" "main" "navigation";
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
   min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (width < 48rem) {
+  html {
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  body {
+    min-height: 100dvh;
+  }
 }
 
 .mobile-header {
+  grid-area: header;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -128,10 +146,11 @@ a {
 }
 
 .app-main {
+  grid-area: main;
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;
-  padding: 1.75rem 1.25rem calc(7rem + env(safe-area-inset-bottom));
+  padding: 1.75rem 1.25rem;
 }
 
 .app-main:focus {
@@ -139,10 +158,10 @@ a {
 }
 
 .app-navigation-frame {
-  position: fixed;
-  right: 0;
+  grid-area: navigation;
+  position: sticky;
   bottom: 0;
-  left: 0;
+  align-self: end;
   z-index: 50;
   border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   background: var(--color-nav-surface);
@@ -357,8 +376,9 @@ a {
 
 @media (min-width: 48rem) {
   .app-shell {
-    display: grid;
+    grid-template-areas: "navigation main";
     grid-template-columns: clamp(14.5rem, 18vw, 17rem) minmax(0, 1fr);
+    grid-template-rows: 1fr;
   }
 
   .mobile-header {
@@ -366,10 +386,12 @@ a {
   }
 
   .app-navigation-frame {
-    position: sticky;
     top: 0;
+    bottom: auto;
+    align-self: start;
     display: flex;
     height: 100vh;
+    height: 100dvh;
     border-top: 0;
     border-right: 1px solid var(--line);
     background: var(--color-nav-surface-wide);

@@ -58,7 +58,7 @@ describe("GET /auth/callback", () => {
     );
   });
 
-  it("returns a Google-specific error when the provider rejects the request", async () => {
+  it("returns recoverable feedback when a legacy link reports an error", async () => {
     const response = await GET(
       new Request(
         "https://app.test/auth/callback?error=access_denied&error_description=cancelled",
@@ -67,7 +67,7 @@ describe("GET /auth/callback", () => {
 
     expect(exchangeCodeForSession).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe(
-      "https://app.test/sign-in?error=oauth_failed",
+      "https://app.test/sign-in?error=invalid_or_expired",
     );
   });
 });
